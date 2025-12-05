@@ -70,19 +70,36 @@ const treeScrollRef = ref(null);
 const timelineComponentRef = ref(null);
 const calendarHeaderRef = ref(null);
 let scrollSyncAttached = false;
+let verticalSyncLocked = false;
+let verticalUnlockRaf = 0;
+
+const releaseVerticalLock = () => {
+  if (verticalUnlockRaf) {
+    cancelAnimationFrame(verticalUnlockRaf);
+  }
+  verticalUnlockRaf = requestAnimationFrame(() => {
+    verticalSyncLocked = false;
+    verticalUnlockRaf = 0;
+  });
+};
 
 const getTimelineScrollElement = () => timelineComponentRef.value?.getScrollElement?.() ?? null;
 
 const syncVerticalScroll = (event) => {
+  if (verticalSyncLocked) {
+    return;
+  }
   const treeEl = treeScrollRef.value;
   const timelineEl = getTimelineScrollElement();
   if (!treeEl || !timelineEl) return;
 
+  verticalSyncLocked = true;
   if (event.target === treeEl) {
     timelineEl.scrollTop = treeEl.scrollTop;
   } else if (event.target === timelineEl) {
     treeEl.scrollTop = timelineEl.scrollTop;
   }
+  releaseVerticalLock();
 };
 
 const detachScrollSync = () => {
@@ -398,6 +415,9 @@ onUnmounted(() => {
   detachScrollSync();
   if (searchDebounceTimeout) {
     clearTimeout(searchDebounceTimeout);
+  }
+  if (verticalUnlockRaf) {
+    cancelAnimationFrame(verticalUnlockRaf);
   }
 });
 </script>

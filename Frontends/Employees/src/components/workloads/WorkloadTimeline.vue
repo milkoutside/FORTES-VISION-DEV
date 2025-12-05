@@ -25,16 +25,8 @@ let headerEl = null;
 const ROW_HEIGHT = 80;
 const ROW_PADDING = 18;
 const LANE_GAP = 8;
-
-const getScrollSyncState = () => {
-  if (typeof window === 'undefined') {
-    return { lockFromHeader: false, lockFromCells: false };
-  }
-  if (!window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__) {
-    window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__ = { lockFromHeader: false, lockFromCells: false };
-  }
-  return window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__;
-};
+let horizontalSyncLocked = false;
+let horizontalUnlockRaf = 0;
 
 const dateIndexMap = computed(() => {
   const map = new Map();
@@ -157,40 +149,40 @@ const getBarTooltip = (row, segment) => {
 };
 
 const handleContainerScroll = (event) => {
-  if (!headerEl) return;
-
-  const syncState = getScrollSyncState();
-  if (syncState.lockFromHeader) {
-    syncState.lockFromHeader = false;
+  if (!headerEl || horizontalSyncLocked) {
     return;
   }
-
-  const targetLeft = event.target.scrollLeft;
-  if (headerEl.scrollLeft === targetLeft) return;
-
-  syncState.lockFromCells = true;
-  headerEl.scrollLeft = targetLeft;
-  requestAnimationFrame(() => {
-    syncState.lockFromCells = false;
+  const nextLeft = event.target.scrollLeft;
+  if (Math.abs(headerEl.scrollLeft - nextLeft) < 1) {
+    return;
+  }
+  horizontalSyncLocked = true;
+  headerEl.scrollLeft = nextLeft;
+  if (horizontalUnlockRaf) {
+    cancelAnimationFrame(horizontalUnlockRaf);
+  }
+  horizontalUnlockRaf = requestAnimationFrame(() => {
+    horizontalSyncLocked = false;
+    horizontalUnlockRaf = 0;
   });
 };
 
 const syncWithHeader = () => {
-  if (!headerEl || !containerRef.value) return;
-
-  const syncState = getScrollSyncState();
-  if (syncState.lockFromCells) {
-    syncState.lockFromCells = false;
+  if (!headerEl || !containerRef.value || horizontalSyncLocked) {
     return;
   }
-
-  const targetLeft = headerEl.scrollLeft;
-  if (containerRef.value.scrollLeft === targetLeft) return;
-
-  syncState.lockFromHeader = true;
-  containerRef.value.scrollLeft = targetLeft;
-  requestAnimationFrame(() => {
-    syncState.lockFromHeader = false;
+  const nextLeft = headerEl.scrollLeft;
+  if (Math.abs(containerRef.value.scrollLeft - nextLeft) < 1) {
+    return;
+  }
+  horizontalSyncLocked = true;
+  containerRef.value.scrollLeft = nextLeft;
+  if (horizontalUnlockRaf) {
+    cancelAnimationFrame(horizontalUnlockRaf);
+  }
+  horizontalUnlockRaf = requestAnimationFrame(() => {
+    horizontalSyncLocked = false;
+    horizontalUnlockRaf = 0;
   });
 };
 
@@ -213,6 +205,9 @@ onUnmounted(() => {
   }
   if (containerRef.value) {
     containerRef.value.removeEventListener('scroll', handleContainerScroll);
+  }
+  if (horizontalUnlockRaf) {
+    cancelAnimationFrame(horizontalUnlockRaf);
   }
 });
 

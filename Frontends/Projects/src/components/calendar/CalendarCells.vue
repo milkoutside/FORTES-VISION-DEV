@@ -49,16 +49,9 @@ const toast = useToast();
 const cellsContainer = ref(null);
 const cellsScrollWrapper = ref(null);
 const contextMenuRef = ref(null);
-
-const getScrollSyncState = () => {
-  if (typeof window === 'undefined') {
-    return { lockFromHeader: false, lockFromCells: false };
-  }
-  if (!window.__PROJECTS_CALENDAR_SCROLL_SYNC__) {
-    window.__PROJECTS_CALENDAR_SCROLL_SYNC__ = { lockFromHeader: false, lockFromCells: false };
-  }
-  return window.__PROJECTS_CALENDAR_SCROLL_SYNC__;
-};
+let calendarHeaderEl = null;
+let horizontalSyncLocked = false;
+let horizontalUnlockRaf = 0;
 
 const allDates = computed(() => store.getters['calendar/allDates']);
 const blockWidth = computed(() => store.getters['calendar/blockWidth']);
@@ -967,45 +960,42 @@ const confirmAttachUsers = async () => {
 };
 
 // Синхронизация скролла
-const syncScrollFromCalendarHeader = () => {
-  const calendarHeader = document.getElementById('calendar-dates-scroll');
-  if (!calendarHeader || !cellsContainer.value) return;
+const getCalendarHeaderEl = () => {
+  if (calendarHeaderEl) return calendarHeaderEl;
+  calendarHeaderEl = document.getElementById('calendar-dates-scroll');
+  return calendarHeaderEl;
+};
 
-  const syncState = getScrollSyncState();
-
-  if (syncState.lockFromHeader) {
-    syncState.lockFromHeader = false;
-    return;
+const releaseHorizontalLock = () => {
+  if (horizontalUnlockRaf) {
+    cancelAnimationFrame(horizontalUnlockRaf);
   }
-
-  const targetLeft = calendarHeader.scrollLeft;
-  if (cellsContainer.value.scrollLeft === targetLeft) return;
-
-  syncState.lockFromHeader = true;
-  cellsContainer.value.scrollLeft = targetLeft;
-  requestAnimationFrame(() => {
-    syncState.lockFromHeader = false;
+  horizontalUnlockRaf = requestAnimationFrame(() => {
+    horizontalSyncLocked = false;
+    horizontalUnlockRaf = 0;
   });
 };
 
-const handleScroll = (event) => {
-  const calendarHeader = document.getElementById('calendar-dates-scroll');
+const syncScrollFromCalendarHeader = () => {
+  if (horizontalSyncLocked || !cellsContainer.value) return;
+  const calendarHeader = getCalendarHeaderEl();
   if (!calendarHeader) return;
+  const targetLeft = calendarHeader.scrollLeft;
+  if (Math.abs(cellsContainer.value.scrollLeft - targetLeft) < 1) return;
+  horizontalSyncLocked = true;
+  cellsContainer.value.scrollLeft = targetLeft;
+  releaseHorizontalLock();
+};
 
-  const syncState = getScrollSyncState();
-  if (syncState.lockFromHeader) {
-    syncState.lockFromHeader = false;
-    return;
-  }
-
+const handleScroll = (event) => {
+  if (horizontalSyncLocked) return;
+  const calendarHeader = getCalendarHeaderEl();
+  if (!calendarHeader) return;
   const targetLeft = event.target.scrollLeft;
-  if (calendarHeader.scrollLeft === targetLeft) return;
-
-  syncState.lockFromCells = true;
+  if (Math.abs(calendarHeader.scrollLeft - targetLeft) < 1) return;
+  horizontalSyncLocked = true;
   calendarHeader.scrollLeft = targetLeft;
-  requestAnimationFrame(() => {
-    syncState.lockFromCells = false;
-  });
+  releaseHorizontalLock();
 };
 
 const handleCloseCalendarContextMenu = () => {
@@ -1017,9 +1007,9 @@ onMounted(() => {
     cellsContainer.value.addEventListener('scroll', handleScroll);
   }
   
-  const calendarHeader = document.getElementById('calendar-dates-scroll');
-  if (calendarHeader) {
-    calendarHeader.addEventListener('scroll', syncScrollFromCalendarHeader);
+  calendarHeaderEl = getCalendarHeaderEl();
+  if (calendarHeaderEl) {
+    calendarHeaderEl.addEventListener('scroll', syncScrollFromCalendarHeader);
   }
   
   window.addEventListener('click', handleDocumentClick);
@@ -1030,13 +1020,7 @@ onMounted(() => {
   // Синхронизируем скролл сразу и после рендеринга
   nextTick(() => {
     syncScrollFromCalendarHeader();
-    // Дополнительная синхронизация с задержкой для плавной прокрутки
-    setTimeout(() => {
-      syncScrollFromCalendarHeader();
-    }, 100);
-    setTimeout(() => {
-      syncScrollFromCalendarHeader();
-    }, 500);
+    requestAnimationFrame(syncScrollFromCalendarHeader);
   });
 });
 
@@ -1045,7 +1029,7 @@ onUnmounted(() => {
     cellsContainer.value.removeEventListener('scroll', handleScroll);
   }
   
-  const calendarHeader = document.getElementById('calendar-dates-scroll');
+  const calendarHeader = getCalendarHeaderEl();
   if (calendarHeader) {
     calendarHeader.removeEventListener('scroll', syncScrollFromCalendarHeader);
   }
@@ -1053,6 +1037,9 @@ onUnmounted(() => {
   window.removeEventListener('click', handleDocumentClick);
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('close-calendar-context-menu', handleCloseCalendarContextMenu);
+  if (horizontalUnlockRaf) {
+    cancelAnimationFrame(horizontalUnlockRaf);
+  }
 });
 
 defineExpose({

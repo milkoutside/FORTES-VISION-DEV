@@ -50,12 +50,10 @@ const cellsContainer = ref(null);
 const cellsScrollWrapper = ref(null);
 const contextMenuRef = ref(null);
 let calendarHeaderEl = null;
-let horizontalSyncLocked = false;
-let horizontalUnlockRaf = 0;
 const DEBUG_SCROLL = true;
 const logScroll = (...args) => {
   if (DEBUG_SCROLL) {
-    console.debug('[PRJ][Cells]', ...args);
+    console.log('[PRJ][Cells]', ...args);
   }
 };
 
@@ -972,38 +970,27 @@ const getCalendarHeaderEl = () => {
   return calendarHeaderEl;
 };
 
-const releaseHorizontalLock = () => {
-  if (horizontalUnlockRaf) {
-    cancelAnimationFrame(horizontalUnlockRaf);
-  }
-  horizontalUnlockRaf = requestAnimationFrame(() => {
-    horizontalSyncLocked = false;
-    horizontalUnlockRaf = 0;
-  });
-};
-
 const syncScrollFromCalendarHeader = () => {
-  if (horizontalSyncLocked || !cellsContainer.value) return;
+  if (!cellsContainer.value) return;
   const calendarHeader = getCalendarHeaderEl();
   if (!calendarHeader) return;
   const targetLeft = calendarHeader.scrollLeft;
   if (Math.abs(cellsContainer.value.scrollLeft - targetLeft) < 1) return;
-  horizontalSyncLocked = true;
   cellsContainer.value.scrollLeft = targetLeft;
-  releaseHorizontalLock();
   logScroll('header -> cells', { left: targetLeft });
 };
 
 const handleScroll = (event) => {
-  if (horizontalSyncLocked) return;
   const calendarHeader = getCalendarHeaderEl();
   if (!calendarHeader) return;
-  const targetLeft = event.target.scrollLeft;
-  if (Math.abs(calendarHeader.scrollLeft - targetLeft) < 1) return;
-  horizontalSyncLocked = true;
-  calendarHeader.scrollLeft = targetLeft;
-  releaseHorizontalLock();
-  logScroll('cells -> header', { left: targetLeft });
+  // Единственный источник правды — шапка. Если кто-то скроллит клетки, возвращаем их к шапке.
+  if (Math.abs(event.target.scrollLeft - calendarHeader.scrollLeft) > 1) {
+    event.target.scrollLeft = calendarHeader.scrollLeft;
+    logScroll('cells scroll ignored, snap to header', {
+      cellsLeft: event.target.scrollLeft,
+      headerLeft: calendarHeader.scrollLeft,
+    });
+  }
 };
 
 const handleCloseCalendarContextMenu = () => {
@@ -1046,9 +1033,6 @@ onUnmounted(() => {
   window.removeEventListener('click', handleDocumentClick);
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('close-calendar-context-menu', handleCloseCalendarContextMenu);
-  if (horizontalUnlockRaf) {
-    cancelAnimationFrame(horizontalUnlockRaf);
-  }
   logScroll('unmounted');
 });
 

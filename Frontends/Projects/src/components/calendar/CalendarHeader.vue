@@ -6,7 +6,7 @@ const store = useStore();
 const DEBUG_SCROLL = true;
 const logScroll = (...args) => {
   if (DEBUG_SCROLL) {
-    console.debug('[PRJ][Header]', ...args);
+    console.log('[PRJ][Header]', ...args);
   }
 };
 

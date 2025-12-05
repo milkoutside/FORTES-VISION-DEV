@@ -25,12 +25,10 @@ let headerEl = null;
 const ROW_HEIGHT = 80;
 const ROW_PADDING = 18;
 const LANE_GAP = 8;
-let horizontalSyncLocked = false;
-let horizontalUnlockRaf = 0;
 const DEBUG_SCROLL = true;
 const logScroll = (...args) => {
   if (DEBUG_SCROLL) {
-    console.debug('[EMP][Timeline]', ...args);
+    console.log('[EMP][Timeline]', ...args);
   }
 };
 
@@ -155,43 +153,28 @@ const getBarTooltip = (row, segment) => {
 };
 
 const handleContainerScroll = (event) => {
-  if (!headerEl || horizontalSyncLocked) {
-    return;
+  if (!headerEl) return;
+  // Единственный источник — шапка; если пользователь скроллит тело, возвращаем его к шапке
+  if (Math.abs(event.target.scrollLeft - headerEl.scrollLeft) > 1) {
+    event.target.scrollLeft = headerEl.scrollLeft;
+    logScroll('cells scroll ignored, snap to header', {
+      cellsLeft: event.target.scrollLeft,
+      headerLeft: headerEl.scrollLeft,
+    });
   }
-  const nextLeft = event.target.scrollLeft;
-  if (Math.abs(headerEl.scrollLeft - nextLeft) < 1) {
-    return;
-  }
-  horizontalSyncLocked = true;
-  headerEl.scrollLeft = nextLeft;
-  logScroll('cells -> header', { left: nextLeft });
-  if (horizontalUnlockRaf) {
-    cancelAnimationFrame(horizontalUnlockRaf);
-  }
-  horizontalUnlockRaf = requestAnimationFrame(() => {
-    horizontalSyncLocked = false;
-    horizontalUnlockRaf = 0;
-  });
 };
 
 const syncWithHeader = () => {
-  if (!headerEl || !containerRef.value || horizontalSyncLocked) {
+  if (!headerEl || !containerRef.value) {
     return;
   }
+
   const nextLeft = headerEl.scrollLeft;
   if (Math.abs(containerRef.value.scrollLeft - nextLeft) < 1) {
     return;
   }
-  horizontalSyncLocked = true;
   containerRef.value.scrollLeft = nextLeft;
   logScroll('header -> cells', { left: nextLeft });
-  if (horizontalUnlockRaf) {
-    cancelAnimationFrame(horizontalUnlockRaf);
-  }
-  horizontalUnlockRaf = requestAnimationFrame(() => {
-    horizontalSyncLocked = false;
-    horizontalUnlockRaf = 0;
-  });
 };
 
 onMounted(() => {
@@ -213,9 +196,6 @@ onUnmounted(() => {
   }
   if (containerRef.value) {
     containerRef.value.removeEventListener('scroll', handleContainerScroll);
-  }
-  if (horizontalUnlockRaf) {
-    cancelAnimationFrame(horizontalUnlockRaf);
   }
 });
 

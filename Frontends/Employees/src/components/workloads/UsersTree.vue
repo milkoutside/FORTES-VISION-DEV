@@ -41,10 +41,10 @@ const resolveRowSubtitle = (row) => {
     const parts = [];
     if (row.meta?.role) parts.push({ text: row.meta.role, type: 'role' });
     if (typeof row.meta?.projectsCount === 'number') {
-      parts.push({ text: `${row.meta.projectsCount} проектов`, type: 'count' });
+      parts.push({ text: `${row.meta.projectsCount} projects`, type: 'count' });
     }
     if (typeof row.meta?.tasksCount === 'number') {
-      parts.push({ text: `${row.meta.tasksCount} задач`, type: 'count' });
+      parts.push({ text: `${row.meta.tasksCount} tasks`, type: 'count' });
     }
     return parts;
   }
@@ -55,7 +55,7 @@ const resolveRowSubtitle = (row) => {
       parts.push({ text: row.meta.clientName, type: 'client' });
     }
     if (typeof row.meta?.tasksCount === 'number') {
-      parts.push({ text: `${row.meta.tasksCount} задач`, type: 'count' });
+      parts.push({ text: `${row.meta.tasksCount} tasks`, type: 'count' });
     }
     return parts;
   }
@@ -90,7 +90,7 @@ const resolveProjectPreview = (row) => {
           v-if="row.canExpand"
           type="button"
           class="toggle-btn"
-          :aria-label="isExpanded(row) ? 'Свернуть' : 'Развернуть'"
+          :aria-label="isExpanded(row) ? 'Collapse' : 'Expand'"
           @click="handleToggle(row)"
         >
           <i
@@ -110,7 +110,7 @@ const resolveProjectPreview = (row) => {
               v-if="row.type === 'task' && row.meta?.completed"
               class="badge badge-complete"
             >
-              Завершено
+              Completed
             </span>
           </div>
           <div v-if="resolveRowSubtitle(row).length" class="subtitle">
@@ -134,7 +134,7 @@ const resolveProjectPreview = (row) => {
     </div>
 
     <div v-if="!rows.length" class="empty-state">
-      <p>Нет данных для отображения. Попробуйте выбрать другой месяц.</p>
+      <p>No data to display. Try selecting another month.</p>
     </div>
   </div>
 </template>

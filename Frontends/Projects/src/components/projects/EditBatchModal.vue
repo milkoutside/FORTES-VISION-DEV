@@ -82,8 +82,8 @@ const loadBatchData = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка загрузки',
-      detail: error.message ?? 'Не удалось загрузить данные батча.',
+      summary: 'Failed to load',
+      detail: error.message ?? 'Could not load batch data.',
       life: 5000,
     });
     form.statusDurations = [];
@@ -173,8 +173,8 @@ const handleSubmit = async () => {
   if (!form.name.trim()) {
     toast.add({
       severity: 'warn',
-      summary: 'Название обязательно',
-      detail: 'Введите название батча.',
+      summary: 'Name is required',
+      detail: 'Enter a batch name.',
       life: 4000,
     });
     return;
@@ -188,9 +188,9 @@ const handleSubmit = async () => {
     if (invalidStatus) {
       toast.add({
         severity: 'warn',
-        summary: 'Проверьте данные',
+        summary: 'Check the data',
         detail:
-          'Все статусы должны быть выбраны, а длительность должна быть больше 0.',
+          'All statuses must be selected and duration must be greater than 0.',
         life: 4000,
       });
       return;
@@ -200,8 +200,8 @@ const handleSubmit = async () => {
   if (!props.batch?.id || !props.project?.id) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка',
-      detail: 'Батч или проект не выбран.',
+      summary: 'Error',
+      detail: 'Batch or project not selected.',
       life: 5000,
     });
     return;
@@ -241,8 +241,8 @@ const handleSubmit = async () => {
 
     toast.add({
       severity: 'success',
-      summary: 'Батч обновлён',
-      detail: `«${form.name}» успешно обновлён.`,
+      summary: 'Batch updated',
+      detail: `"${form.name}" updated successfully.`,
       life: 3000,
     });
     
@@ -251,8 +251,8 @@ const handleSubmit = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка обновления батча',
-      detail: error.message ?? 'Попробуйте снова.',
+      summary: 'Failed to update batch',
+      detail: error.message ?? 'Try again.',
       life: 6000,
     });
   } finally {
@@ -264,7 +264,7 @@ const handleSubmit = async () => {
 <template>
   <Dialog
     v-model:visible="internalVisible"
-    header="Батч инфо"
+    header="Batch info"
     modal
     dismissableMask
     :draggable="false"
@@ -274,27 +274,27 @@ const handleSubmit = async () => {
   >
     <div v-if="isLoading" class="text-center py-5">
       <i class="pi pi-spin pi-spinner fs-4 d-block mb-2"></i>
-      <span>Загрузка данных...</span>
+      <span>Loading data...</span>
     </div>
 
     <form v-else class="d-flex flex-column gap-4" @submit.prevent="handleSubmit">
       <div>
-        <label class="form-label fw-semibold">Название батча</label>
+        <label class="form-label fw-semibold">Batch name</label>
         <InputText
           v-model="form.name"
           class="w-100"
-          placeholder="Введите название батча"
+          placeholder="Enter batch name"
           autocomplete="off"
         />
       </div>
 
       <div>
         <div class="d-flex align-items-center justify-content-between mb-3">
-          <label class="form-label fw-semibold mb-0">Batch Calculator (опционально)</label>
+          <label class="form-label fw-semibold mb-0">Batch Calculator (optional)</label>
           <Button
             type="button"
             icon="pi pi-plus"
-            label="Добавить статус"
+            label="Add status"
             size="small"
             @click="addStatusDuration"
           />
@@ -302,7 +302,7 @@ const handleSubmit = async () => {
 
         <div v-if="form.statusDurations.length === 0" class="text-center py-4 text-muted border rounded">
           <i class="pi pi-info-circle d-block mb-2"></i>
-          <span>Вы пока не добавили статусы. Это опционально.</span>
+          <span>No statuses added yet. This is optional.</span>
         </div>
 
         <div v-else class="d-flex flex-column gap-2">
@@ -322,25 +322,25 @@ const handleSubmit = async () => {
             
             <div class="flex-grow-1 d-flex gap-3">
               <div class="flex-grow-1">
-                <label class="form-label small mb-1">Статус</label>
+                <label class="form-label small mb-1">Status</label>
                 <Select
                   v-model="statusDuration.status"
                   :options="statuses"
                   optionLabel="name"
                   optionValue="id"
-                  placeholder="Выберите статус"
+                  placeholder="Select a status"
                   class="w-100"
                 />
               </div>
               
               <div style="width: 150px;">
-                <label class="form-label small mb-1">Длительность</label>
+                <label class="form-label small mb-1">Duration</label>
                 <InputNumber
                   v-model="statusDuration.duration"
                   :min="1"
                   :max="9999"
                   class="w-100"
-                  placeholder="Дни"
+                  placeholder="Days"
                 />
               </div>
             </div>
@@ -358,10 +358,10 @@ const handleSubmit = async () => {
       </div>
 
       <div class="d-flex justify-content-end gap-2">
-        <Button type="button" label="Отмена" severity="secondary" class="px-4" @click="internalVisible = false" />
+        <Button type="button" label="Cancel" severity="secondary" class="px-4" @click="internalVisible = false" />
         <Button
           type="submit"
-          label="Сохранить"
+          label="Save"
           class="px-4"
           :disabled="!isFormValid || isSubmitting"
           :loading="isSubmitting"

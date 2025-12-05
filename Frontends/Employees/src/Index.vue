@@ -16,11 +16,10 @@ const logScroll = (...args) => {
   }
 };
 
-// Древовидная структура фильтров для TreeSelect
 const FILTER_TREE = [
   {
     key: 'role',
-    label: 'По роли',
+    label: 'By role',
     children: [
       { key: 'role-modeller', label: 'Modeller', value: 'modeller', type: 'role' },
       { key: 'role-freelancer', label: 'Freelancer', value: 'freelancer', type: 'role' },
@@ -31,10 +30,10 @@ const FILTER_TREE = [
   },
   {
     key: 'projects',
-    label: 'По проектам',
+    label: 'By projects',
     children: [
-      { key: 'project-active', label: 'Активные', value: 'active', type: 'project' },
-      { key: 'project-inactive', label: 'Неактивные', value: 'inactive', type: 'project' },
+      { key: 'project-active', label: 'Active', value: 'active', type: 'project' },
+      { key: 'project-inactive', label: 'Inactive', value: 'inactive', type: 'project' },
     ]
   }
 ];
@@ -152,7 +151,7 @@ const buildRows = (users = []) => {
       return {
         ...segment,
         color: getProjectColor(segment.projectId),
-        projectName: project?.projectName ?? segment.projectName ?? 'Проект',
+        projectName: project?.projectName ?? segment.projectName ?? 'Project',
       };
     });
 
@@ -219,7 +218,7 @@ const buildRows = (users = []) => {
               color: task.status?.color ?? '#2563eb',
               textColor: task.status?.textColor ?? '#ffffff',
               label: task.status?.name,
-              tooltip: `${task.status?.name ?? 'Задача'}: ${task.startDate} — ${task.endDate}`,
+              tooltip: `${task.status?.name ?? 'Task'}: ${task.startDate} — ${task.endDate}`,
             },
           ],
           meta: {
@@ -438,7 +437,7 @@ onUnmounted(() => {
     <AppHeader @open-settings="handleOpenSettings" @scroll-to-today="handleScrollToToday" />
     <main class="app-main">
       <div v-if="error" class="error-banner">
-        <span>Не удалось загрузить данные: {{ error.message ?? error }}</span>
+        <span>Failed to load data: {{ error.message ?? error }}</span>
       </div>
       <div class="board">
         <section class="list-panel">
@@ -448,7 +447,7 @@ onUnmounted(() => {
                 <input
                   v-model="searchValue"
                   type="text"
-                  placeholder="Найти сотрудника, проект или задачу..."
+                  placeholder="Search employee, project, or task..."
                   @input="handleSearchInput"
                 />
               </div>
@@ -459,7 +458,7 @@ onUnmounted(() => {
                   v-model="selectedFilters"
                   :options="FILTER_TREE"
                   selectionMode="checkbox"
-                  :placeholder="hasActiveFilters ? `Фильтры (${activeFiltersCount})` : 'Выберите фильтры'"
+                  :placeholder="hasActiveFilters ? `Filters (${activeFiltersCount})` : 'Select filters'"
                   class="filter-tree-select"
                   display="chip"
                 />
@@ -468,7 +467,7 @@ onUnmounted(() => {
                   class="clear-filters-icon"
                   type="button"
                   @click="clearFilters"
-                  title="Очистить фильтры"
+                  title="Clear filters"
                 >
                   <i class="pi pi-times-circle"></i>
                 </button>

@@ -407,7 +407,7 @@ const actions = {
   },
   async applyStatusToCells({ state, dispatch }, { cells, statusId }) {
     if (!statusId) {
-      throw new Error('Статус не выбран.');
+      throw new Error('Status not selected.');
     }
     const groups = groupCellsByImage(cells);
     let created = 0;

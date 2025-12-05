@@ -122,16 +122,16 @@ onUnmounted(() => {
   >
     <div class="project-context-menu__item" @click="handleEdit">
       <i class="pi pi-pencil me-2"></i>
-      <span>Редактировать проект</span>
+      <span>Edit project</span>
     </div>
     <div class="project-context-menu__item" @click="handleCreateBatch">
       <i class="pi pi-plus me-2"></i>
-      <span>Создать батч</span>
+      <span>Create batch</span>
     </div>
     <div class="project-context-menu__divider"></div>
     <div class="project-context-menu__item project-context-menu__item--danger" @click="handleDelete">
       <i class="pi pi-trash me-2"></i>
-      <span>Удалить проект</span>
+      <span>Delete project</span>
     </div>
   </div>
 </template>

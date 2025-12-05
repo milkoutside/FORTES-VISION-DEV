@@ -90,8 +90,8 @@ const handleProjectClick = async (project, event) => {
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка загрузки батчей',
-          detail: error.message ?? 'Не удалось загрузить батчи проекта.',
+          summary: 'Failed to load batches',
+          detail: error.message ?? 'Could not load project batches.',
           life: 5000,
         });
       } finally {
@@ -133,12 +133,12 @@ const handleDelete = () => {
   
   const projectName = selectedProject.value.name;
   confirm.require({
-    message: `Вы уверены, что хотите удалить проект «${projectName}»? Это действие нельзя отменить.`,
-    header: 'Подтверждение удаления',
+    message: `Delete project "${projectName}"? This action cannot be undone.`,
+    header: 'Delete confirmation',
     icon: 'pi pi-exclamation-triangle',
     rejectClass: 'p-button-secondary p-button-outlined',
-    rejectLabel: 'Отмена',
-    acceptLabel: 'Удалить',
+    rejectLabel: 'Cancel',
+    acceptLabel: 'Delete',
     accept: async () => {
       try {
         await store.dispatch('projects/delete', selectedProject.value.id);
@@ -146,15 +146,15 @@ const handleDelete = () => {
         batchesByProject.value.delete(selectedProject.value.id);
         toast.add({
           severity: 'success',
-          summary: 'Проект удалён',
-          detail: `«${projectName}» успешно удалён.`,
+          summary: 'Project deleted',
+          detail: `"${projectName}" deleted successfully.`,
           life: 3000,
         });
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка удаления',
-          detail: error.message ?? 'Не удалось удалить проект.',
+          summary: 'Deletion error',
+          detail: error.message ?? 'Failed to delete project.',
           life: 6000,
         });
       }
@@ -205,12 +205,12 @@ const handleBatchDelete = () => {
   
   const batchName = selectedBatch.value.name;
   confirm.require({
-    message: `Вы уверены, что хотите удалить батч «${batchName}»? Это действие нельзя отменить.`,
-    header: 'Подтверждение удаления',
+    message: `Delete batch "${batchName}"? This action cannot be undone.`,
+    header: 'Delete confirmation',
     icon: 'pi pi-exclamation-triangle',
     rejectClass: 'p-button-secondary p-button-outlined',
-    rejectLabel: 'Отмена',
-    acceptLabel: 'Удалить',
+    rejectLabel: 'Cancel',
+    acceptLabel: 'Delete',
     accept: async () => {
       try {
         const { deleteBatch } = await import('../../repositories/batchesRepository');
@@ -223,15 +223,15 @@ const handleBatchDelete = () => {
         
         toast.add({
           severity: 'success',
-          summary: 'Батч удалён',
-          detail: `«${batchName}» успешно удалён.`,
+          summary: 'Batch deleted',
+          detail: `"${batchName}" deleted successfully.`,
           life: 3000,
         });
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка удаления',
-          detail: error.message ?? 'Не удалось удалить батч.',
+          summary: 'Deletion error',
+          detail: error.message ?? 'Failed to delete batch.',
           life: 6000,
         });
       }
@@ -262,8 +262,8 @@ const handleBatchClick = async (batch, project, event) => {
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка загрузки изображений',
-          detail: error.message ?? 'Не удалось загрузить изображения батча.',
+          summary: 'Failed to load images',
+          detail: error.message ?? 'Could not load batch images.',
           life: 5000,
         });
       } finally {
@@ -289,8 +289,8 @@ const handleBatchCreated = async (projectId) => {
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Ошибка обновления',
-        detail: 'Не удалось обновить список батчей.',
+        summary: 'Update error',
+        detail: 'Could not refresh batch list.',
         life: 3000,
       });
     } finally {
@@ -309,8 +309,8 @@ const handleBatchUpdated = async (projectId) => {
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Ошибка обновления',
-        detail: 'Не удалось обновить список батчей.',
+        summary: 'Update error',
+        detail: 'Could not refresh batch list.',
         life: 3000,
       });
     } finally {
@@ -347,12 +347,12 @@ const handleImageDelete = () => {
   
   const imageName = selectedImage.value.name;
   confirm.require({
-    message: `Вы уверены, что хотите удалить изображение «${imageName}»? Это действие нельзя отменить.`,
-    header: 'Подтверждение удаления',
+    message: `Delete image "${imageName}"? This action cannot be undone.`,
+    header: 'Delete confirmation',
     icon: 'pi pi-exclamation-triangle',
     rejectClass: 'p-button-secondary p-button-outlined',
-    rejectLabel: 'Отмена',
-    acceptLabel: 'Удалить',
+    rejectLabel: 'Cancel',
+    acceptLabel: 'Delete',
     accept: async () => {
       try {
         await deleteImage(selectedImageProject.value.id, selectedImageBatch.value.id, selectedImage.value.id);
@@ -365,15 +365,15 @@ const handleImageDelete = () => {
         
         toast.add({
           severity: 'success',
-          summary: 'Изображение удалено',
-          detail: `«${imageName}» успешно удалено.`,
+          summary: 'Image deleted',
+          detail: `"${imageName}" deleted successfully.`,
           life: 3000,
         });
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка удаления',
-          detail: error.message ?? 'Не удалось удалить изображение.',
+          summary: 'Deletion error',
+          detail: error.message ?? 'Failed to delete image.',
           life: 6000,
         });
       }
@@ -392,8 +392,8 @@ const handleImageCreated = async (projectId, batchId) => {
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Ошибка обновления',
-        detail: 'Не удалось обновить список изображений.',
+        summary: 'Update error',
+        detail: 'Could not refresh image list.',
         life: 3000,
       });
     } finally {
@@ -413,8 +413,8 @@ const handleImageUpdated = async (projectId, batchId) => {
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Ошибка обновления',
-        detail: 'Не удалось обновить список изображений.',
+        summary: 'Update error',
+        detail: 'Could not refresh image list.',
         life: 3000,
       });
     } finally {
@@ -472,7 +472,7 @@ defineExpose({
         <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
         <InputText
           v-model="searchInput"
-          placeholder="Поиск проектов..."
+          placeholder="Search projects..."
           class="w-100 ps-5"
           @update:model-value="handleSearch"
         />
@@ -484,7 +484,7 @@ defineExpose({
       <div class="position-relative">
         <i class="pi pi-filter position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
         <InputText
-          placeholder="Фильтры..."
+          placeholder="Filters..."
           class="w-100 ps-5"
           disabled
         />
@@ -498,17 +498,17 @@ defineExpose({
     >
       <div v-if="isLoading && projects.length === 0" class="text-center p-3 text-muted">
         <i class="pi pi-spin pi-spinner fs-4 d-block mb-2"></i>
-        <span>Загрузка проектов...</span>
+        <span>Loading projects...</span>
       </div>
 
       <div v-else-if="error && projects.length === 0" class="text-center p-3 text-danger">
         <i class="pi pi-exclamation-triangle fs-4 d-block mb-2"></i>
-        <span>{{ error.message || 'Ошибка загрузки проектов' }}</span>
+        <span>{{ error.message || 'Failed to load projects' }}</span>
       </div>
 
       <div v-else-if="projects.length === 0" class="text-center p-3 text-muted">
         <i class="pi pi-folder fs-4 d-block mb-2"></i>
-        <span>Проекты не найдены</span>
+        <span>No projects found</span>
       </div>
 
       <div v-else class="projects-list__items">
@@ -523,7 +523,7 @@ defineExpose({
               <div class="flex-grow-1" style="min-width: 0; padding-left: 12px;">
                 <div class="fw-semibold text-truncate">{{ project.name }}</div>
                 <div v-if="project.clientName" class="text-muted small text-truncate">
-                  Клиент: {{ project.clientName }}
+                  Client: {{ project.clientName }}
                 </div>
               </div>
               <div class="d-flex align-items-center" style="flex-shrink: 0; padding-right: 12px;">
@@ -543,7 +543,7 @@ defineExpose({
           >
             <div v-if="loadingBatches.has(project.id)" class="text-center p-2 ps-4 text-muted small batch-item" style="height: 6vh; display: flex; align-items: center; justify-content: center;">
               <i class="pi pi-spin pi-spinner me-2"></i>
-              <span>Загрузка батчей...</span>
+              <span>Loading batches...</span>
             </div>
             
             <div
@@ -551,7 +551,7 @@ defineExpose({
               class="text-center p-2 ps-4 text-muted small batch-item"
               style="height: 6vh; display: flex; align-items: center; justify-content: center;"
             >
-              Батчи не найдены
+              No batches found
             </div>
             
             <template
@@ -572,11 +572,11 @@ defineExpose({
                   <div class="d-flex align-items-center gap-3 small text-muted" style="flex-shrink: 0;">
                     <span v-if="batch.images?.length" class="text-nowrap">
                       <i class="pi pi-image"></i>
-                      {{ batch.images.length }} изображений
+                      {{ batch.images.length }} images
                     </span>
                     <span v-if="batch.users?.length" class="text-nowrap">
                       <i class="pi pi-users"></i>
-                      {{ batch.users.length }} участников
+                      {{ batch.users.length }} participants
                     </span>
                     <i 
                       class="pi"
@@ -594,7 +594,7 @@ defineExpose({
               >
                 <div v-if="loadingImages.has(`${project.id}-${batch.id}`)" class="text-center p-2 ps-4 text-muted small image-item" style="height: 6vh; display: flex; align-items: center; justify-content: center;">
                   <i class="pi pi-spin pi-spinner me-2"></i>
-                  <span>Загрузка изображений...</span>
+                  <span>Loading images...</span>
                 </div>
                 
                 <div
@@ -602,7 +602,7 @@ defineExpose({
                   class="text-center p-2 ps-4 text-muted small image-item"
                   style="height: 6vh; display: flex; align-items: center; justify-content: center;"
                 >
-                  Изображения не найдены
+                  No images found
                 </div>
                 
                 <div
@@ -618,7 +618,7 @@ defineExpose({
                     <div class="d-flex align-items-center gap-3 small text-muted" style="flex-shrink: 0;">
                       <span v-if="image.users?.length" class="text-nowrap">
                         <i class="pi pi-users"></i>
-                        {{ image.users.length }} участников
+                        {{ image.users.length }} participants
                       </span>
                     </div>
                   </div>
@@ -631,12 +631,12 @@ defineExpose({
         <!-- Индикатор загрузки дополнительных элементов -->
         <div v-if="isLoadingMore" class="text-center p-2 text-muted small">
           <i class="pi pi-spin pi-spinner me-2"></i>
-          <span>Загрузка...</span>
+      <span>Loading...</span>
         </div>
 
         <!-- Сообщение о конце списка -->
         <div v-if="!hasMore && projects.length > 0" class="text-center p-2 text-muted small">
-          Все проекты загружены
+      All projects loaded
         </div>
       </div>
     </div>

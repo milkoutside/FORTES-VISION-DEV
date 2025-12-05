@@ -193,23 +193,27 @@ const scrollToToday = async () => {
   const cellWidth = finalCell.offsetWidth;
   const targetScrollLeft = Math.max(0, cellLeftWithinHeader - (headerWidth - cellWidth) / 2);
 
+  const diff = Math.abs(header.scrollLeft - targetScrollLeft);
+  const behavior = diff > 24 ? 'smooth' : 'auto';
+
   isProgrammaticScroll.value = true;
   header.scrollTo({
     left: targetScrollLeft,
-    behavior: 'smooth',
+    behavior,
   });
-  logScroll('scrollToToday', { targetScrollLeft, cell: finalCell?.dataset?.date });
+  logScroll('scrollToToday', { targetScrollLeft, diff, cell: finalCell?.dataset?.date, behavior });
 
   requestAnimationFrame(() => {
+    header.scrollLeft = targetScrollLeft;
+    const calendarCells = document.querySelector('.images-virtual-container');
+    if (calendarCells) {
+      calendarCells.scrollLeft = targetScrollLeft;
+    }
     requestAnimationFrame(() => {
       isProgrammaticScroll.value = false;
-      logScroll('scrollToToday done');
+      logScroll('scrollToToday done (snap)', { left: header.scrollLeft });
     });
   });
-
-  setTimeout(() => {
-    isProgrammaticScroll.value = false;
-  }, 400);
 };
 
 const resetScrollToStart = () => {

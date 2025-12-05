@@ -244,7 +244,7 @@ defineExpose({
 
     <div v-if="loading" class="timeline-overlay">
       <span class="spinner"></span>
-      <span>Загружаем свежие данные…</span>
+      <span>Loading fresh data…</span>
     </div>
   </div>
 </template>

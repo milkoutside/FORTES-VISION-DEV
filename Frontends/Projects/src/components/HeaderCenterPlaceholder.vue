@@ -1,6 +1,6 @@
 <template>
   <section class="header-center-placeholder flex-grow-1 d-flex align-items-center justify-content-center">
-    <span class="visually-hidden">Зарезервированная центральная область</span>
+    <span class="visually-hidden">Reserved center area</span>
   </section>
 </template>
 

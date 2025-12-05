@@ -40,8 +40,8 @@ const ensureStatusesLoaded = async () => {
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Не удалось загрузить статусы',
-        detail: error.message ?? 'Попробуйте обновить страницу.',
+        summary: 'Failed to load statuses',
+        detail: error.message ?? 'Try refreshing the page.',
         life: 5000,
       });
     }
@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
       class="nav-btn left border-0 rounded-circle"
       type="button"
       :disabled="!canScrollLeft"
-      aria-label="Прокрутить статусы влево"
+      aria-label="Scroll statuses left"
       @click="goToPage(-1)"
     >
       <i class="pi pi-chevron-left"></i>
@@ -208,8 +208,8 @@ onBeforeUnmount(() => {
 
     <div class="status-track flex-grow-1" ref="scrollerRef">
       <div class="status-strip d-flex align-items-center gap-2" :style="trackTransform">
-        <div v-if="isLoading" class="text-muted small">Загружаем статусы…</div>
-        <div v-else-if="!statuses.length" class="text-muted small">Статусы ещё не созданы</div>
+        <div v-if="isLoading" class="text-muted small">Loading statuses...</div>
+        <div v-else-if="!statuses.length" class="text-muted small">No statuses created yet</div>
         <button
           v-for="status in statuses"
           :key="status.id"
@@ -230,7 +230,7 @@ onBeforeUnmount(() => {
       class="nav-btn right border-0 rounded-circle"
       type="button"
       :disabled="!canScrollRight"
-      aria-label="Прокрутить статусы вправо"
+      aria-label="Scroll statuses right"
       @click="goToPage(1)"
     >
       <i class="pi pi-chevron-right"></i>

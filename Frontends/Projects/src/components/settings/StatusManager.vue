@@ -62,8 +62,8 @@ const ensureData = async () => {
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Ошибка загрузки статусов',
-        detail: error.message ?? 'Не удалось получить статусы.',
+        summary: 'Failed to load statuses',
+        detail: error.message ?? 'Could not fetch statuses.',
         life: 5000,
       });
     }
@@ -110,16 +110,16 @@ const handleCreateSubmit = async () => {
     await store.dispatch('statuses/create', payload);
     toast.add({
       severity: 'success',
-      summary: 'Статус создан',
-      detail: `«${payload.name}» добавлен.`,
+      summary: 'Status created',
+      detail: `"${payload.name}" added.`,
       life: 3000,
     });
     isCreateModalVisible.value = false;
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось создать статус',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to create status',
+      detail: error.message ?? 'Try again.',
       life: 5000,
     });
   }
@@ -135,8 +135,8 @@ const saveEditing = async () => {
   if (!canInlineSave.value) {
     toast.add({
       severity: 'warn',
-      summary: 'Проверьте данные',
-      detail: 'Название статуса обязательно.',
+      summary: 'Check the data',
+      detail: 'Status name is required.',
       life: 4000,
     });
     return;
@@ -151,16 +151,16 @@ const saveEditing = async () => {
     });
     toast.add({
       severity: 'success',
-      summary: 'Статус обновлён',
-      detail: `«${payload.name}» сохранён.`,
+      summary: 'Status updated',
+      detail: `"${payload.name}" saved.`,
       life: 3000,
     });
     resetEditingRow();
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось сохранить',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to save',
+      detail: error.message ?? 'Try again.',
       life: 5000,
     });
   }
@@ -172,19 +172,19 @@ const cancelEditing = () => {
 
 const confirmRemoval = (status) => {
   confirm.require({
-    message: `Удалить статус «${status.name}»?`,
-    header: 'Удаление статуса',
+    message: `Delete status "${status.name}"?`,
+    header: 'Status deletion',
     icon: 'pi pi-exclamation-triangle',
-    acceptLabel: 'Удалить',
-    rejectLabel: 'Отмена',
+    acceptLabel: 'Delete',
+    rejectLabel: 'Cancel',
     acceptClass: 'p-button-danger',
     accept: async () => {
       try {
         await store.dispatch('statuses/delete', status.id);
         toast.add({
           severity: 'success',
-          summary: 'Статус удалён',
-          detail: `«${status.name}» больше не доступен.`,
+          summary: 'Status deleted',
+          detail: `"${status.name}" is no longer available.`,
           life: 3000,
         });
         if (editingRow.id === status.id) {
@@ -193,8 +193,8 @@ const confirmRemoval = (status) => {
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка удаления',
-          detail: error.message ?? 'Не удалось удалить статус.',
+          summary: 'Deletion error',
+          detail: error.message ?? 'Failed to delete status.',
           life: 5000,
         });
       }
@@ -208,19 +208,19 @@ const confirmRemoval = (status) => {
     <div class="card shadow-sm border-0 rounded-4">
       <div class="card-body d-flex flex-column">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-3">
-          <h5 class="mb-0">Список статусов</h5>
+          <h5 class="mb-0">Status list</h5>
           <div class="d-flex flex-column flex-md-row align-items-stretch gap-2 w-100 w-lg-auto">
             <div class="search-box d-flex align-items-center gap-2 flex-grow-1">
               <span class="pi pi-search text-muted"></span>
               <InputText
                 v-model="searchTerm"
-                placeholder="Поиск по названию"
+                placeholder="Search by name"
                 class="flex-grow-1"
               />
             </div>
             <Button
               type="button"
-              label="Создать статус"
+              label="Create status"
               icon="pi pi-plus"
               class="ms-md-2"
               @click="openCreateModal"
@@ -236,12 +236,12 @@ const confirmRemoval = (status) => {
           scrollHeight="440px"
           class="status-table flex-grow-1"
         >
-          <Column field="name" header="Название" sortable>
+          <Column field="name" header="Name" sortable>
             <template #body="{ data }">
               <div v-if="editingRow.id === data.id" class="inline-input">
                 <InputText
                   v-model.trim="editingRow.name"
-                  placeholder="Название статуса"
+                  placeholder="Status name"
                   :disabled="isSaving"
                 />
               </div>
@@ -249,7 +249,7 @@ const confirmRemoval = (status) => {
             </template>
           </Column>
 
-          <Column header="Цвет">
+          <Column header="Color">
             <template #body="{ data }">
               <div v-if="editingRow.id === data.id" class="d-flex align-items-center gap-3">
                 <div class="color-input border rounded-3 px-3 py-2 d-flex align-items-center justify-content-between flex-grow-1">
@@ -269,7 +269,7 @@ const confirmRemoval = (status) => {
             </template>
           </Column>
 
-          <Column header="Действия" class="text-end">
+          <Column header="Actions" class="text-end">
             <template #body="{ data }">
               <div v-if="editingRow.id === data.id" class="d-flex gap-2 justify-content-end">
                 <Button
@@ -314,7 +314,7 @@ const confirmRemoval = (status) => {
 
           <template #empty>
             <div class="text-center text-muted py-4">
-              Нет подходящих статусов.
+            No matching statuses.
             </div>
           </template>
         </DataTable>
@@ -324,24 +324,24 @@ const confirmRemoval = (status) => {
     <Dialog
       v-model:visible="isCreateModalVisible"
       modal
-      header="Создать статус"
+      header="Create status"
       :style="{ width: '420px' }"
       :draggable="false"
       @hide="handleCreateDialogHide"
     >
       <form class="d-flex flex-column gap-3" @submit.prevent="handleCreateSubmit">
         <div>
-          <label class="form-label fw-semibold">Название</label>
+          <label class="form-label fw-semibold">Name</label>
           <InputText
             v-model.trim="createForm.name"
-            placeholder="Название статуса"
+            placeholder="Status name"
             class="w-100"
             :disabled="isSaving"
           />
         </div>
 
         <div>
-          <label class="form-label fw-semibold">Цвет</label>
+          <label class="form-label fw-semibold">Color</label>
           <div class="color-input border rounded-3 px-3 py-2 d-flex align-items-center justify-content-between">
             <ColorPicker
               v-model="createForm.color"
@@ -357,13 +357,13 @@ const confirmRemoval = (status) => {
       <template #footer>
         <div class="d-flex justify-content-end gap-2">
           <Button
-            label="Отмена"
+            label="Cancel"
             severity="secondary"
             outlined
             @click="isCreateModalVisible = false"
           />
           <Button
-            label="Создать"
+            label="Create"
             icon="pi pi-check"
             :loading="isSaving"
             :disabled="!canCreate || isSaving"

@@ -20,7 +20,7 @@ const internalVisible = computed({
 <template>
   <Dialog
     v-model:visible="internalVisible"
-    header="Управление пользователями"
+    header="User management"
     modal
     :draggable="false"
     blockScroll

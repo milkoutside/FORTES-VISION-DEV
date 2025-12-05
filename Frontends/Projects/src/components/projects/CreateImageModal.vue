@@ -82,8 +82,8 @@ const fetchUsers = async (search = '') => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось загрузить пользователей',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to load users',
+      detail: error.message ?? 'Try again.',
       life: 5000,
     });
   } finally {
@@ -145,8 +145,8 @@ const handleSubmit = async () => {
   if (!form.name.trim()) {
     toast.add({
       severity: 'warn',
-      summary: 'Название обязательно',
-      detail: 'Введите название изображения.',
+      summary: 'Name is required',
+      detail: 'Enter an image name.',
       life: 4000,
     });
     return;
@@ -155,8 +155,8 @@ const handleSubmit = async () => {
   if (!props.batch?.id || !props.project?.id) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка',
-      detail: 'Батч или проект не выбран.',
+      summary: 'Error',
+      detail: 'Batch or project not selected.',
       life: 5000,
     });
     return;
@@ -172,8 +172,8 @@ const handleSubmit = async () => {
 
     toast.add({
       severity: 'success',
-      summary: 'Изображение создано',
-      detail: `«${form.name}» успешно создано.`,
+      summary: 'Image created',
+      detail: `"${form.name}" created successfully.`,
       life: 3000,
     });
     
@@ -182,8 +182,8 @@ const handleSubmit = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка создания изображения',
-      detail: error.message ?? 'Попробуйте снова.',
+      summary: 'Failed to create image',
+      detail: error.message ?? 'Try again.',
       life: 6000,
     });
   } finally {
@@ -195,7 +195,7 @@ const handleSubmit = async () => {
 <template>
   <Dialog
     v-model:visible="internalVisible"
-    header="Создать изображение"
+    header="Create image"
     modal
     dismissableMask
     :draggable="false"
@@ -205,11 +205,11 @@ const handleSubmit = async () => {
   >
     <form class="d-flex flex-column gap-4" @submit.prevent="handleSubmit">
       <div>
-        <label class="form-label fw-semibold">Название изображения</label>
+        <label class="form-label fw-semibold">Image name</label>
         <InputText
           v-model="form.name"
           class="w-100"
-          placeholder="Введите название изображения"
+          placeholder="Enter image name"
           autocomplete="off"
         />
       </div>
@@ -226,8 +226,8 @@ const handleSubmit = async () => {
             filter
             :loading="isLoadingUsers"
             class="w-100"
-            placeholder="Выберите modellers"
-            filterPlaceholder="Поиск по имени"
+            placeholder="Select modellers"
+            filterPlaceholder="Search by name"
             :maxSelectedLabels="3"
             @filter="handleUsersFilter"
           />
@@ -244,8 +244,8 @@ const handleSubmit = async () => {
             filter
             :loading="isLoadingUsers"
             class="w-100"
-            placeholder="Выберите freelancers"
-            filterPlaceholder="Поиск по имени"
+            placeholder="Select freelancers"
+            filterPlaceholder="Search by name"
             :maxSelectedLabels="3"
             @filter="handleUsersFilter"
           />
@@ -264,8 +264,8 @@ const handleSubmit = async () => {
             filter
             :loading="isLoadingUsers"
             class="w-100"
-            placeholder="Выберите art directors"
-            filterPlaceholder="Поиск по имени"
+            placeholder="Select art directors"
+            filterPlaceholder="Search by name"
             :maxSelectedLabels="3"
             @filter="handleUsersFilter"
           />
@@ -282,8 +282,8 @@ const handleSubmit = async () => {
             filter
             :loading="isLoadingUsers"
             class="w-100"
-            placeholder="Выберите artists"
-            filterPlaceholder="Поиск по имени"
+            placeholder="Select artists"
+            filterPlaceholder="Search by name"
             :maxSelectedLabels="3"
             @filter="handleUsersFilter"
           />
@@ -291,10 +291,10 @@ const handleSubmit = async () => {
       </div>
 
       <div class="d-flex justify-content-end gap-2">
-        <Button type="button" label="Отмена" severity="secondary" class="px-4" @click="internalVisible = false" />
+        <Button type="button" label="Cancel" severity="secondary" class="px-4" @click="internalVisible = false" />
         <Button
           type="submit"
-          label="Создать"
+          label="Create"
           class="px-4"
           :disabled="!isFormValid || isSubmitting"
           :loading="isSubmitting"

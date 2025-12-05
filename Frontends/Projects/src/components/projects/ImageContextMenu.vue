@@ -117,12 +117,12 @@ onUnmounted(() => {
   >
     <div class="image-context-menu__item" @click="handleEdit">
       <i class="pi pi-pencil me-2"></i>
-      <span>Редактировать</span>
+      <span>Edit</span>
     </div>
     <div class="image-context-menu__divider"></div>
     <div class="image-context-menu__item image-context-menu__item--danger" @click="handleDelete">
       <i class="pi pi-trash me-2"></i>
-      <span>Удалить</span>
+      <span>Delete</span>
     </div>
   </div>
 </template>

@@ -21,7 +21,7 @@ const internalVisible = computed({
 <template>
   <Dialog
     v-model:visible="internalVisible"
-    header="Настройки"
+    header="Settings"
     modal
     :draggable="false"
     blockScroll
@@ -31,10 +31,10 @@ const internalVisible = computed({
     :contentStyle="{ height: 'calc(100vh - 80px)', overflow: 'auto' }"
   >
     <TabView lazy class="settings-tabs">
-      <TabPanel header="Статусы">
+      <TabPanel header="Statuses">
         <StatusManager />
       </TabPanel>
-      <TabPanel header="Пользователи">
+      <TabPanel header="Users">
         <UserManager />
       </TabPanel>
     </TabView>

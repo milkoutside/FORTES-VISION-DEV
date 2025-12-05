@@ -44,13 +44,13 @@ const isManagersLoading = ref(false);
 let managerFilterTimer;
 
 const deadlineOptions = [
-  { label: 'Гибкий (soft)', value: 'soft' },
-  { label: 'Жёсткий (hard)', value: 'hard' },
+  { label: 'Flexible (soft)', value: 'soft' },
+  { label: 'Strict (hard)', value: 'hard' },
 ];
 
 const dateError = computed(() => {
   if (form.startDate && form.endDate && form.endDate < form.startDate) {
-    return 'Дата окончания не может быть раньше даты начала';
+    return 'End date cannot be before start date';
   }
   return '';
 });
@@ -123,8 +123,8 @@ const fetchManagers = async (search = '') => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось загрузить менеджеров',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to load managers',
+      detail: error.message ?? 'Try again.',
       life: 5000,
     });
   } finally {
@@ -183,8 +183,8 @@ const handleSubmit = async () => {
   if (!form.name.trim()) {
     toast.add({
       severity: 'warn',
-      summary: 'Название обязательно',
-      detail: 'Введите название проекта.',
+      summary: 'Name is required',
+      detail: 'Enter a project name.',
       life: 4000,
     });
     return;
@@ -193,7 +193,7 @@ const handleSubmit = async () => {
   if (dateError.value) {
     toast.add({
       severity: 'warn',
-      summary: 'Проверьте даты',
+      summary: 'Check dates',
       detail: dateError.value,
       life: 4000,
     });
@@ -203,8 +203,8 @@ const handleSubmit = async () => {
   if (!props.project?.id) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка',
-      detail: 'Проект не выбран.',
+      summary: 'Error',
+      detail: 'Project not selected.',
       life: 5000,
     });
     return;
@@ -220,16 +220,16 @@ const handleSubmit = async () => {
 
     toast.add({
       severity: 'success',
-      summary: 'Проект обновлён',
-      detail: `«${updated.name}» успешно обновлён.`,
+      summary: 'Project updated',
+      detail: `"${updated.name}" updated successfully.`,
       life: 3000,
     });
     internalVisible.value = false;
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка обновления проекта',
-      detail: error.message ?? 'Попробуйте снова.',
+      summary: 'Failed to update project',
+      detail: error.message ?? 'Try again.',
       life: 6000,
     });
   } finally {
@@ -241,7 +241,7 @@ const handleSubmit = async () => {
 <template>
   <Dialog
     v-model:visible="internalVisible"
-    header="Редактировать проект"
+    header="Edit project"
     modal
     dismissableMask
     :draggable="false"
@@ -252,20 +252,20 @@ const handleSubmit = async () => {
     <form class="d-flex flex-column gap-4" @submit.prevent="handleSubmit">
       <div class="row g-3">
         <div class="col-md-8">
-          <label class="form-label fw-semibold">Название проекта</label>
+          <label class="form-label fw-semibold">Project name</label>
           <InputText
             v-model="form.name"
             class="w-100"
-            placeholder="Например, Fortes Vision"
+            placeholder="Example: Fortes Vision"
             autocomplete="off"
           />
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold d-block">Статус</label>
+          <label class="form-label fw-semibold d-block">Status</label>
           <div class="d-flex align-items-center gap-2">
             <ToggleSwitch inputId="edit-project-active" v-model="form.isActive" />
             <label class="mb-0 text-muted" for="edit-project-active">
-              {{ form.isActive ? 'Активен' : 'Приостановлен' }}
+              {{ form.isActive ? 'Active' : 'Paused' }}
             </label>
           </div>
         </div>
@@ -273,25 +273,25 @@ const handleSubmit = async () => {
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Дата начала</label>
+          <label class="form-label fw-semibold">Start date</label>
           <DatePicker
             v-model="form.startDate"
             showIcon
             iconDisplay="input"
             dateFormat="dd.mm.yy"
             class="w-100"
-            placeholder="Не выбрано"
+            placeholder="Not selected"
           />
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Дата окончания</label>
+          <label class="form-label fw-semibold">End date</label>
           <DatePicker
             v-model="form.endDate"
             showIcon
             iconDisplay="input"
             dateFormat="dd.mm.yy"
             class="w-100"
-            placeholder="Не выбрано"
+            placeholder="Not selected"
           />
           <small v-if="dateError" class="text-danger">{{ dateError }}</small>
         </div>
@@ -299,16 +299,16 @@ const handleSubmit = async () => {
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Клиент</label>
+          <label class="form-label fw-semibold">Client</label>
           <InputText
             v-model="form.clientName"
             class="w-100"
-            placeholder="Имя клиента"
+            placeholder="Client name"
             autocomplete="off"
           />
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Тип дедлайна</label>
+          <label class="form-label fw-semibold">Deadline type</label>
           <Select
             v-model="form.deadlineType"
             :options="deadlineOptions"
@@ -330,8 +330,8 @@ const handleSubmit = async () => {
           filter
           :loading="isManagersLoading"
           class="w-100"
-          placeholder="Выберите менеджеров"
-          filterPlaceholder="Поиск по имени"
+          placeholder="Select managers"
+          filterPlaceholder="Search by name"
           :maxSelectedLabels="3"
           @filter="handleManagersFilter"
         />
@@ -341,10 +341,10 @@ const handleSubmit = async () => {
       </div>
 
       <div class="d-flex justify-content-end gap-2">
-        <Button type="button" label="Отмена" severity="secondary" class="px-4" @click="internalVisible = false" />
+        <Button type="button" label="Cancel" severity="secondary" class="px-4" @click="internalVisible = false" />
         <Button
           type="submit"
-          label="Сохранить"
+          label="Save"
           class="px-4"
           :disabled="isSubmitDisabled || Boolean(dateError)"
           :loading="isSubmitting"

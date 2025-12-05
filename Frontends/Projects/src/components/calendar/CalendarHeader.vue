@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
-const DEBUG_SCROLL = true;
+const DEBUG_SCROLL = false;
 const logScroll = (...args) => {
   if (DEBUG_SCROLL) {
     console.log('[PRJ][Header]', ...args);
@@ -28,8 +28,11 @@ const selectDate = (dateStr) => {
 const EDGE_PROXIMITY_PX = 40;
 const EDGE_HOLD_MS = 500;
 const INACTIVITY_RESET_MS = 350;
+const NAVIGATION_LOCK_MS = 420;
+const PROGRAMMATIC_GUARD_MS = 320;
+const SMOOTH_SNAP_DELAY_MS = 180;
 
-const isAutoNavigating = ref(false);
+const isNavigating = ref(false);
 const isProgrammaticScroll = ref(false);
 const isPointerDown = ref(false);
 const isDragging = ref(false);
@@ -38,6 +41,8 @@ const isWheelActive = ref(false);
 let dragStartX = 0;
 let dragStartScrollLeft = 0;
 let activePointerId = null;
+let navigationUnlockTimeout = 0;
+let programmaticScrollTimeout = 0;
 const waitForFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
 const userActive = computed(() => isPointerDown.value || isWheelActive.value);
@@ -67,6 +72,60 @@ const resetProgress = () => {
   rightProgress.value = 0;
 };
 
+const setProgrammaticScrollGuard = (duration = PROGRAMMATIC_GUARD_MS) => {
+  isProgrammaticScroll.value = true;
+  clearTimeout(programmaticScrollTimeout);
+  programmaticScrollTimeout = setTimeout(() => {
+    isProgrammaticScroll.value = false;
+  }, duration);
+};
+
+const syncCellsScroll = (targetLeft) => {
+  const calendarCells = document.querySelector('.images-virtual-container');
+  if (!calendarCells) return;
+  if (Math.abs(calendarCells.scrollLeft - targetLeft) < 1) return;
+  calendarCells.scrollLeft = targetLeft;
+};
+
+const scrollHeaderTo = (targetLeft, behavior = 'auto') => {
+  const header = getHeaderEl();
+  if (!header) return;
+
+  cancelEdgeHold();
+  setProgrammaticScrollGuard();
+  header.scrollTo({
+    left: targetLeft,
+    behavior,
+  });
+  syncCellsScroll(targetLeft);
+
+  const snapToTarget = () => {
+    header.scrollLeft = targetLeft;
+    syncCellsScroll(targetLeft);
+  };
+
+  // Подстрахуемся от погрешности позиционирования
+  if (behavior === 'smooth') {
+    setTimeout(snapToTarget, SMOOTH_SNAP_DELAY_MS);
+  } else {
+    requestAnimationFrame(snapToTarget);
+  }
+};
+
+const withNavigationLock = async (callback) => {
+  if (isNavigating.value) return false;
+  isNavigating.value = true;
+  try {
+    await callback();
+    return true;
+  } finally {
+    clearTimeout(navigationUnlockTimeout);
+    navigationUnlockTimeout = setTimeout(() => {
+      isNavigating.value = false;
+    }, NAVIGATION_LOCK_MS);
+  }
+};
+
 const cancelEdgeHold = () => {
   edgeHoldSide.value = null;
   if (edgeHoldRaf) cancelAnimationFrame(edgeHoldRaf);
@@ -87,7 +146,7 @@ const tickEdgeHold = (ts) => {
   const header = getHeaderEl();
   const stillNear = edgeHoldSide.value === 'left' ? nearLeftEdge(header) : nearRightEdge(header);
 
-  if (!stillNear || !userActive.value || isAutoNavigating.value || isProgrammaticScroll.value) {
+  if (!stillNear || !userActive.value || isNavigating.value || isProgrammaticScroll.value) {
     cancelEdgeHold();
     return;
   }
@@ -96,9 +155,9 @@ const tickEdgeHold = (ts) => {
     const side = edgeHoldSide.value;
     cancelEdgeHold();
     if (side === 'left') {
-      void goToPreviousThreeMonths(true);
+      void goToPreviousThreeMonths();
     } else {
-      void goToNextThreeMonths(true);
+      void goToNextThreeMonths();
     }
     return;
   }
@@ -107,7 +166,7 @@ const tickEdgeHold = (ts) => {
 };
 
 const startEdgeHold = (side) => {
-  if (isAutoNavigating.value || isProgrammaticScroll.value) return;
+  if (isNavigating.value || isProgrammaticScroll.value) return;
   const header = getHeaderEl();
   if (!header) return;
 
@@ -124,42 +183,36 @@ const startEdgeHold = (side) => {
   if (!edgeHoldRaf) edgeHoldRaf = requestAnimationFrame(tickEdgeHold);
 };
 
-const goToPreviousThreeMonths = async (fromAuto = false) => {
-  if (isAutoNavigating.value) return;
-  isAutoNavigating.value = !!fromAuto;
-  store.dispatch('calendar/goToPreviousThreeMonths');
-  await nextTick();
-  resetScrollToStart();
-  setTimeout(() => {
-    isAutoNavigating.value = false;
-  }, 400);
-};
+const goToPreviousThreeMonths = async () =>
+  withNavigationLock(async () => {
+    await store.dispatch('calendar/goToPreviousThreeMonths');
+    await nextTick();
+    resetScrollToStart();
+  });
 
-const goToNextThreeMonths = async (fromAuto = false) => {
-  if (isAutoNavigating.value) return;
-  isAutoNavigating.value = !!fromAuto;
-  store.dispatch('calendar/goToNextThreeMonths');
-  await nextTick();
-  resetScrollToStart();
-  setTimeout(() => {
-    isAutoNavigating.value = false;
-  }, 400);
-};
+const goToNextThreeMonths = async () =>
+  withNavigationLock(async () => {
+    await store.dispatch('calendar/goToNextThreeMonths');
+    await nextTick();
+    resetScrollToStart();
+  });
 
 const ensureTodayInRange = async () => {
   const today = store.getters['calendar/today'];
   const allDates = threeMonthsData.value.flatMap((month) => month.dates);
-  if (allDates.includes(today)) return;
+  if (allDates.includes(today)) return true;
 
-  isAutoNavigating.value = true;
-  try {
+  const dispatched = await withNavigationLock(async () => {
     await store.dispatch('calendar/goToToday');
     await nextTick();
     await waitForFrame();
-  } finally {
-    isAutoNavigating.value = false;
+  });
+
+  if (dispatched) {
+    logScroll('ensureTodayInRange -> dispatch goToToday');
   }
-  logScroll('ensureTodayInRange -> dispatch goToToday');
+
+  return dispatched;
 };
 
 const findTodayCell = async () => {
@@ -177,9 +230,9 @@ const findTodayCell = async () => {
 };
 
 const scrollToToday = async () => {
-  await ensureTodayInRange();
+  const ready = await ensureTodayInRange();
   const header = getHeaderEl();
-  if (!header) return;
+  if (!header || ready === false) return;
 
   const todayCell = await findTodayCell();
   if (!todayCell) return;
@@ -192,39 +245,25 @@ const scrollToToday = async () => {
   const cellWidth = todayCell.offsetWidth;
   const targetScrollLeft = Math.max(0, cellLeftWithinHeader - (headerWidth - cellWidth) / 2);
 
-  isProgrammaticScroll.value = true;
-  header.scrollTo({
-    left: targetScrollLeft,
-    behavior: 'smooth',
-  });
-  logScroll('scrollToToday', { targetScrollLeft, date: todayCell?.dataset?.date });
+  const diff = Math.abs(header.scrollLeft - targetScrollLeft);
+  const behavior = diff > 24 ? 'smooth' : 'auto';
 
-  setTimeout(() => {
-    isProgrammaticScroll.value = false;
-    logScroll('scrollToToday done');
-  }, 400);
+  scrollHeaderTo(targetScrollLeft, behavior);
+  logScroll('scrollToToday', { targetScrollLeft, diff, date: todayCell?.dataset?.date, behavior });
 };
 
 const resetScrollToStart = () => {
   const header = getHeaderEl();
   if (!header) return;
 
-  isProgrammaticScroll.value = true;
-  header.scrollTo({
-    left: 0,
-    behavior: 'smooth',
-  });
+  scrollHeaderTo(0, 'smooth');
   logScroll('resetScrollToStart');
-
-  setTimeout(() => {
-    isProgrammaticScroll.value = false;
-  }, 400);
 };
 
 const handleCalendarScroll = (event) => {
   const header = event.target;
 
-  if (isProgrammaticScroll.value || isAutoNavigating.value) return;
+  if (isProgrammaticScroll.value || isNavigating.value) return;
   logScroll('header scroll', {
     left: header.scrollLeft,
     atLeft: nearLeftEdge(header),
@@ -301,14 +340,11 @@ const syncCalendarScroll = () => {
   const header = getHeaderEl();
   const calendarCells = document.querySelector('.images-virtual-container');
   if (!header || !calendarCells) return;
-  const diff = Math.abs(calendarCells.scrollLeft - header.scrollLeft);
-  if (diff < 1) return;
-  isProgrammaticScroll.value = true;
-  calendarCells.scrollLeft = header.scrollLeft;
-  requestAnimationFrame(() => {
-    isProgrammaticScroll.value = false;
-  });
-  logScroll('syncCalendarScroll -> cells', { left: header.scrollLeft });
+  const targetLeft = header.scrollLeft;
+  if (Math.abs(calendarCells.scrollLeft - targetLeft) < 1) return;
+  setProgrammaticScrollGuard();
+  calendarCells.scrollLeft = targetLeft;
+  logScroll('syncCalendarScroll -> cells', { left: targetLeft });
 };
 
 onMounted(() => {

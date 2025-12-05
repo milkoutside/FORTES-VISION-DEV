@@ -197,8 +197,8 @@ const ensureTasksForRow = async (row) => {
     fetchedImageKeys.delete(key);
     toast.add({
       severity: 'error',
-      summary: 'Не удалось загрузить задачи',
-      detail: error.message ?? 'Попробуйте обновить страницу.',
+      summary: 'Failed to load tasks',
+      detail: error.message ?? 'Try refreshing the page.',
       life: 4000,
     });
   }
@@ -253,8 +253,8 @@ const selectedImages = computed(() => {
 });
 const selectionTaskCount = computed(() => selectionTasks.value.length);
 const selectionSummary = computed(() => {
-  if (!selectedCellsCount.value) return 'Нет выделения';
-  return `${selectedCellsCount.value} ячеек`;
+  if (!selectedCellsCount.value) return 'No selection';
+  return `${selectedCellsCount.value} cells`;
 });
 const selectionHasTasks = computed(() => selectionTaskCount.value > 0);
 const selectionAllCompleted = computed(
@@ -263,7 +263,7 @@ const selectionAllCompleted = computed(
     selectionTasks.value.every((task) => task.completed),
 );
 const toggleCompletionLabel = computed(() =>
-  selectionAllCompleted.value ? 'Открыть задачу' : 'Complete the task',
+  selectionAllCompleted.value ? 'Reopen task' : 'Complete the task',
 );
 const canFillSelection = computed(
   () => !!selectedStatusId.value && selectedCellsCount.value > 0,
@@ -473,7 +473,7 @@ const roleLabelsMap = {
   freelancer: 'Freelancer',
 };
 
-const getRoleLabel = (role) => roleLabelsMap[normalizeRoleKey(role)] ?? 'Участник';
+const getRoleLabel = (role) => roleLabelsMap[normalizeRoleKey(role)] ?? 'Member';
 
 const createUserOption = (user) => {
   const id = user?.userId ?? user?.id ?? user?.value;
@@ -497,7 +497,7 @@ const getTaskUsers = (imageData, date) => {
 const formatUsersTooltip = (users) => {
   if (!users?.length) return '';
   return users
-    .map((user) => `${user.name ?? 'Без имени'} • ${getRoleLabel(user.role)}`)
+    .map((user) => `${user.name ?? 'No name'} • ${getRoleLabel(user.role)}`)
     .join('\n');
 };
 
@@ -724,8 +724,8 @@ const handleFillSelection = async () => {
   if (!selectedStatusId.value) {
     toast.add({
       severity: 'warn',
-      summary: 'Выберите статус',
-      detail: 'Чтобы закрасить ячейки, сначала выберите статус вверху.',
+      summary: 'Select a status',
+      detail: 'To fill cells, select a status above first.',
       life: 4000,
     });
     return;
@@ -750,16 +750,16 @@ const handleFillSelection = async () => {
       });
       toast.add({
         severity: 'success',
-        summary: 'Статусы обновлены',
-        detail: `Создано ${result.created}, обновлено ${result.updated}.`,
+        summary: 'Statuses updated',
+        detail: `Created ${result.created}, updated ${result.updated}.`,
         life: 3500,
       });
       closeContextMenu();
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Не удалось закрасить ячейки',
-        detail: error.message ?? 'Попробуйте ещё раз.',
+        summary: 'Failed to fill cells',
+        detail: error.message ?? 'Try again.',
         life: 4500,
       });
     }
@@ -770,8 +770,8 @@ const handleClearSelection = async () => {
   if (!selectionHasTasks.value) {
     toast.add({
       severity: 'info',
-      summary: 'Нечего очищать',
-      detail: 'В выбранных ячейках нет задач.',
+      summary: 'Nothing to clear',
+      detail: 'No tasks in the selected cells.',
       life: 3500,
     });
     return;
@@ -787,18 +787,18 @@ const handleClearSelection = async () => {
       });
       toast.add({
         severity: 'success',
-        summary: 'Удаление выполнено',
+      summary: 'Deletion completed',
         detail: result.removed
-          ? `Удалено ${result.removed} задач.`
-          : 'Не удалось найти задачи для удаления.',
+        ? `Removed ${result.removed} tasks.`
+        : 'Could not find tasks to delete.',
         life: 3500,
       });
       closeContextMenu();
     } catch (error) {
       toast.add({
         severity: 'error',
-        summary: 'Не удалось очистить ячейки',
-        detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to clear cells',
+      detail: error.message ?? 'Try again.',
         life: 4500,
       });
     }
@@ -809,8 +809,8 @@ const handleToggleCompletion = async () => {
   if (!selectionHasTasks.value) {
     toast.add({
       severity: 'info',
-      summary: 'Нет задач для изменения статуса',
-      detail: 'Сначала выделите закрашенные ячейки.',
+      summary: 'No tasks to change status',
+      detail: 'Select filled cells first.',
       life: 3500,
     });
     return;
@@ -828,10 +828,10 @@ const handleToggleCompletion = async () => {
       });
       toast.add({
         severity: 'success',
-        summary: targetCompleted ? 'Задачи завершены' : 'Задачи открыты',
+      summary: targetCompleted ? 'Tasks completed' : 'Tasks reopened',
         detail: result.updated
-          ? `Обновлено ${result.updated} задач.`
-          : 'Не удалось обновить задачи.',
+        ? `Updated ${result.updated} tasks.`
+        : 'Failed to update tasks.',
         life: 3500,
       });
       closeContextMenu();
@@ -839,9 +839,9 @@ const handleToggleCompletion = async () => {
       toast.add({
         severity: 'error',
         summary: targetCompleted
-          ? 'Не удалось завершить задачи'
-          : 'Не удалось открыть задачи',
-        detail: error.message ?? 'Попробуйте ещё раз.',
+        ? 'Failed to complete tasks'
+        : 'Failed to reopen tasks',
+      detail: error.message ?? 'Try again.',
         life: 4500,
       });
     }
@@ -870,7 +870,7 @@ watch(
 );
 
 const roleFilterOptions = [
-  { label: 'Все роли', value: 'all' },
+  { label: 'All roles', value: 'all' },
   { label: 'Artists', value: 'artist' },
   { label: 'Modellers', value: 'modeller' },
   { label: 'Art Directors', value: 'art_director' },
@@ -891,8 +891,8 @@ const openAttachUsersDialog = () => {
   if (!selectionHasTasks.value) {
     toast.add({
       severity: 'info',
-      summary: 'Нет задач для привязки участников',
-      detail: 'Сначала закрасьте ячейки.',
+      summary: 'No tasks to assign participants',
+      detail: 'Fill the cells first.',
       life: 3500,
     });
     return;
@@ -925,8 +925,8 @@ const confirmAttachUsers = async () => {
   if (hadSelection && !normalizedUsers.length) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось подготовить пользователей',
-      detail: 'Попробуйте выбрать участников снова.',
+      summary: 'Failed to prepare users',
+      detail: 'Try selecting participants again.',
       life: 4000,
     });
     return;
@@ -943,10 +943,10 @@ const confirmAttachUsers = async () => {
     });
     toast.add({
       severity: 'success',
-      summary: 'Пользователи назначены',
+    summary: 'Users assigned',
       detail: result.updated
-        ? `Обновлено ${result.updated} задач.`
-        : 'Не удалось обновить задачи.',
+      ? `Updated ${result.updated} tasks.`
+      : 'Failed to update tasks.',
       life: 3500,
     });
     attachUsersDialog.visible = false;
@@ -954,8 +954,8 @@ const confirmAttachUsers = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось назначить пользователей',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+    summary: 'Failed to assign users',
+    detail: error.message ?? 'Try again.',
       life: 4500,
     });
   } finally {
@@ -1130,7 +1130,7 @@ defineExpose({
                 <i
                   v-if="!isWeekend(date) && getTaskForImageDate(item.data, date)?.completed"
                   class="pi pi-check cell-complete-icon"
-                  title="Задача завершена"
+                  title="Task completed"
                   style="align-self: flex-start;"
                 ></i>
               </div>
@@ -1162,9 +1162,9 @@ defineExpose({
     <div class="context-summary">
       <div class="fw-semibold">{{ selectionSummary }}</div>
       <div class="text-muted small">
-        {{ selectionTaskCount }} задач •
+        {{ selectionTaskCount }} tasks •
         <span v-if="selectedStatus">{{ selectedStatus.name }}</span>
-        <span v-else>Статус не выбран</span>
+        <span v-else>Status not selected</span>
       </div>
     </div>
 
@@ -1174,7 +1174,7 @@ defineExpose({
       :disabled="!canFillSelection || isPerformingAction"
       @click="handleFillSelection"
     >
-      <span>Закрасить выбранным статусом</span>
+      <span>Fill with selected status</span>
       <span
         v-if="selectedStatus"
         class="status-chip"
@@ -1182,7 +1182,7 @@ defineExpose({
       >
         {{ selectedStatus.name }}
       </span>
-      <span v-else class="text-muted small">(выберите статус)</span>
+      <span v-else class="text-muted small">(select a status)</span>
     </button>
 
     <button
@@ -1191,7 +1191,7 @@ defineExpose({
       :disabled="!canClearSelection || isPerformingAction"
       @click="handleClearSelection"
     >
-      Очистить
+      Clear
     </button>
 
     <button
@@ -1209,20 +1209,20 @@ defineExpose({
       :disabled="!canAttachUsers || isPerformingAction"
       @click="openAttachUsersDialog"
     >
-      Присоединить пользователей к задаче
+      Attach users to task
     </button>
   </div>
 
   <Dialog
     v-model:visible="attachUsersDialog.visible"
-    header="Присоединить пользователей"
+    header="Attach users"
     modal
     class="attach-users-dialog"
   >
     <div class="d-flex flex-column gap-3">
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">Фильтр по роли</label>
+          <label class="form-label">Filter by role</label>
           <Select
             v-model="attachUsersDialog.roleFilter"
             :options="roleFilterOptions"
@@ -1233,7 +1233,7 @@ defineExpose({
         </div>
       </div>
       <div>
-        <label class="form-label">Пользователи изображения</label>
+        <label class="form-label">Image users</label>
         <MultiSelect
           v-model="attachUsersDialog.selectedUserIds"
           :options="filteredUserOptions"
@@ -1242,8 +1242,8 @@ defineExpose({
           display="chip"
           filter
           :filterFields="['label', 'roleLabel']"
-          filterPlaceholder="Поиск по имени"
-          placeholder="Выберите участников"
+          filterPlaceholder="Search by name"
+          placeholder="Select participants"
           class="w-100"
           :disabled="!filteredUserOptions.length"
         >
@@ -1260,17 +1260,17 @@ defineExpose({
           v-if="!filteredUserOptions.length"
           class="text-muted d-block mt-2"
         >
-          Пользователи ещё не загружены или не найдены.
+          Users are not loaded or not found.
         </small>
         <small class="text-muted d-block mt-2">
-          Оставьте список пустым и нажмите «Применить», чтобы удалить всех участников из выбранных задач.
+          Leave the list empty and click "Apply" to remove all participants from the selected tasks.
         </small>
       </div>
     </div>
     <template #footer>
-      <Button label="Отмена" text @click="closeAttachUsersDialog" />
+      <Button label="Cancel" text @click="closeAttachUsersDialog" />
       <Button
-        label="Применить"
+        label="Apply"
         :disabled="attachUsersDialog.isSaving"
         :loading="attachUsersDialog.isSaving"
         @click="confirmAttachUsers"

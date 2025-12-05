@@ -11,7 +11,7 @@ const humanizeRole = (value) =>
     .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
     .join(' ');
 const ROLE_OPTIONS = RAW_ROLES.map((value) => ({ value, label: humanizeRole(value) }));
-const roleFilterOptions = [{ label: 'Все роли', value: 'all' }, ...ROLE_OPTIONS];
+const roleFilterOptions = [{ label: 'All roles', value: 'all' }, ...ROLE_OPTIONS];
 
 const store = useStore();
 const toast = useToast();
@@ -55,8 +55,8 @@ const loadUsers = async ({ page, limit } = {}) => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка загрузки пользователей',
-      detail: error.message ?? 'Не удалось получить пользователей.',
+      summary: 'Failed to load users',
+      detail: error.message ?? 'Could not fetch users.',
       life: 5000,
     });
   }
@@ -115,8 +115,8 @@ const handleCreateSubmit = async () => {
   if (!createForm.name.trim()) {
     toast.add({
       severity: 'warn',
-      summary: 'Проверьте данные',
-      detail: 'Имя обязательно.',
+      summary: 'Check the data',
+      detail: 'Name is required.',
       life: 4000,
     });
     return;
@@ -131,8 +131,8 @@ const handleCreateSubmit = async () => {
     await store.dispatch('users/create', payload);
     toast.add({
       severity: 'success',
-      summary: 'Пользователь создан',
-      detail: `«${payload.name}» добавлен.`,
+      summary: 'User created',
+      detail: `"${payload.name}" added.`,
       life: 3000,
     });
     isCreateModalVisible.value = false;
@@ -140,8 +140,8 @@ const handleCreateSubmit = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось создать',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to create',
+      detail: error.message ?? 'Try again.',
       life: 5000,
     });
   }
@@ -159,8 +159,8 @@ const saveEditing = async () => {
   if (!canInlineSave.value) {
     toast.add({
       severity: 'warn',
-      summary: 'Проверьте данные',
-      detail: 'Имя и роль обязательны.',
+      summary: 'Check the data',
+      detail: 'Name and role are required.',
       life: 4000,
     });
     return;
@@ -175,16 +175,16 @@ const saveEditing = async () => {
     await store.dispatch('users/update', { id: editingRow.id, payload });
     toast.add({
       severity: 'success',
-      summary: 'Пользователь обновлён',
-      detail: `«${payload.name}» сохранён.`,
+      summary: 'User updated',
+      detail: `"${payload.name}" saved.`,
       life: 3000,
     });
     resetEditingRow();
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Не удалось сохранить',
-      detail: error.message ?? 'Попробуйте ещё раз.',
+      summary: 'Failed to save',
+      detail: error.message ?? 'Try again.',
       life: 5000,
     });
   }
@@ -198,19 +198,19 @@ const getRoleLabel = (value) => ROLE_OPTIONS.find((role) => role.value === value
 
 const confirmRemoval = (user) => {
   confirm.require({
-    message: `Удалить пользователя «${user.name}»?`,
-    header: 'Удаление пользователя',
+    message: `Delete user "${user.name}"?`,
+    header: 'User deletion',
     icon: 'pi pi-exclamation-triangle',
-    acceptLabel: 'Удалить',
-    rejectLabel: 'Отмена',
+    acceptLabel: 'Delete',
+    rejectLabel: 'Cancel',
     acceptClass: 'p-button-danger',
     accept: async () => {
       try {
         await store.dispatch('users/delete', user.id);
         toast.add({
           severity: 'success',
-          summary: 'Пользователь удалён',
-          detail: `«${user.name}» больше не существует.`,
+          summary: 'User deleted',
+          detail: `"${user.name}" no longer exists.`,
           life: 3000,
         });
         if (editingRow.id === user.id) {
@@ -221,8 +221,8 @@ const confirmRemoval = (user) => {
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: 'Ошибка удаления',
-          detail: error.message ?? 'Не удалось удалить пользователя.',
+          summary: 'Deletion error',
+          detail: error.message ?? 'Failed to delete user.',
           life: 5000,
         });
       }
@@ -243,15 +243,15 @@ const handlePageChange = (event) => {
       <div class="card-body d-flex flex-column">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
           <div>
-            <h5 class="mb-1">Список пользователей</h5>
-            <small class="text-muted">Всего: {{ pagination.total }}</small>
+            <h5 class="mb-1">User list</h5>
+            <small class="text-muted">Total: {{ pagination.total }}</small>
           </div>
           <div class="control-toolbar d-flex flex-column flex-lg-row align-items-stretch gap-2 w-100 w-lg-auto">
             <div class="search-box d-flex align-items-center gap-2 flex-grow-1">
               <span class="pi pi-search text-muted"></span>
               <InputText
                 v-model="searchTerm"
-                placeholder="Поиск по имени"
+                placeholder="Search by name"
                 class="flex-grow-1 border-0 shadow-none"
               />
             </div>
@@ -265,7 +265,7 @@ const handlePageChange = (event) => {
             />
             <Button
               type="button"
-              label="Создать"
+              label="Create"
               icon="pi pi-user-plus"
               class="create-btn"
               size="small"
@@ -282,12 +282,12 @@ const handlePageChange = (event) => {
           scrollHeight="420px"
           class="flex-grow-1"
         >
-          <Column field="name" header="Имя">
+          <Column field="name" header="Name">
             <template #body="{ data }">
               <div v-if="editingRow.id === data.id" class="inline-input">
                 <InputText
                   v-model.trim="editingRow.name"
-                  placeholder="Введите имя"
+                  placeholder="Enter name"
                   :disabled="isSaving"
                 />
               </div>
@@ -295,7 +295,7 @@ const handlePageChange = (event) => {
             </template>
           </Column>
 
-          <Column field="role" header="Роль">
+          <Column field="role" header="Role">
             <template #body="{ data }">
               <div v-if="editingRow.id === data.id" class="inline-input">
                 <Select
@@ -303,7 +303,7 @@ const handlePageChange = (event) => {
                   :options="ROLE_OPTIONS"
                   optionLabel="label"
                   optionValue="value"
-                  placeholder="Выберите роль"
+                  placeholder="Select a role"
                   class="w-100"
                   :disabled="isSaving"
                 />
@@ -314,7 +314,7 @@ const handlePageChange = (event) => {
             </template>
           </Column>
 
-          <Column header="Действия" class="text-end">
+          <Column header="Actions" class="text-end">
             <template #body="{ data }">
               <div v-if="editingRow.id === data.id" class="d-flex gap-2 justify-content-end">
                 <Button
@@ -358,7 +358,7 @@ const handlePageChange = (event) => {
           </Column>
 
           <template #empty>
-            <div class="text-center text-muted py-4">Пользователи не найдены.</div>
+            <div class="text-center text-muted py-4">Users not found.</div>
           </template>
         </DataTable>
 
@@ -376,24 +376,24 @@ const handlePageChange = (event) => {
     <Dialog
       v-model:visible="isCreateModalVisible"
       modal
-      header="Создать пользователя"
+      header="Create user"
       :style="{ width: '420px' }"
       :draggable="false"
       @hide="handleCreateDialogHide"
     >
       <form class="d-flex flex-column gap-3" @submit.prevent="handleCreateSubmit">
         <div>
-          <label class="form-label fw-semibold">Имя</label>
+          <label class="form-label fw-semibold">Name</label>
           <InputText
             v-model.trim="createForm.name"
-            placeholder="Полное имя"
+            placeholder="Full name"
             class="w-100"
             :disabled="isSaving"
           />
         </div>
 
         <div>
-          <label class="form-label fw-semibold">Роль</label>
+          <label class="form-label fw-semibold">Role</label>
           <Select
             v-model="createForm.role"
             :options="ROLE_OPTIONS"
@@ -408,13 +408,13 @@ const handlePageChange = (event) => {
       <template #footer>
         <div class="d-flex justify-content-end gap-2">
           <Button
-            label="Отмена"
+            label="Cancel"
             severity="secondary"
             outlined
             @click="isCreateModalVisible = false"
           />
           <Button
-            label="Создать"
+            label="Create"
             icon="pi pi-check"
             :loading="isSaving"
             :disabled="!createForm.name.trim() || isSaving"

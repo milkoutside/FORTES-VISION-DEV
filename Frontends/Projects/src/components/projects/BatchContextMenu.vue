@@ -122,16 +122,16 @@ onUnmounted(() => {
   >
     <div class="batch-context-menu__item" @click="handleEdit">
       <i class="pi pi-info-circle me-2"></i>
-      <span>Батч инфо</span>
+      <span>Batch info</span>
     </div>
     <div class="batch-context-menu__item" @click="handleCreateImages">
       <i class="pi pi-plus me-2"></i>
-      <span>Создать изображения</span>
+      <span>Create images</span>
     </div>
     <div class="batch-context-menu__divider"></div>
     <div class="batch-context-menu__item batch-context-menu__item--danger" @click="handleDelete">
       <i class="pi pi-trash me-2"></i>
-      <span>Удалить батч</span>
+      <span>Delete batch</span>
     </div>
   </div>
 </template>

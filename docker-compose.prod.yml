@@ -1,0 +1,121 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: fortes_mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_ROOT_PASSWORD=fortes_root
+      - MYSQL_DATABASE=fortesdb
+      - MYSQL_USER=fortes
+      - MYSQL_PASSWORD=fortes_pass
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ufortes", "-pfortes_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - fortes_net
+  
+  employees-api:
+    build:
+      context: .
+      dockerfile: dockerfiles/Employees.Api/Dockerfile
+      target: final
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=fortesdb;user=fortes;password=fortes_pass;TreatTinyAsBoolean=false
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "5001:8080"
+    networks:
+      - fortes_net
+
+  projects-api:
+    build:
+      context: .
+      dockerfile: dockerfiles/Projects.Api/Dockerfile
+      target: final
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=fortesdb;user=fortes;password=fortes_pass;TreatTinyAsBoolean=false
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "5002:8080"
+    networks:
+      - fortes_net
+
+  projects-frontend:
+    image: node:20.19.0
+    working_dir: /app
+    environment:
+      - VITE_API_PROXY_TARGET=http://projects-api:8080
+    command: >
+      sh -c "npm install --include=dev &&
+      npm run build &&
+      npm run preview -- --host 0.0.0.0 --port 5173 --strictPort"
+    volumes:
+      - ./Frontends/Projects:/app
+      - projects_frontend_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      projects-api:
+        condition: service_started
+    networks:
+      - fortes_net
+
+  employees-frontend:
+    image: node:20.19.0
+    working_dir: /app
+    environment:
+      - VITE_API_PROXY_TARGET=http://employees-api:8080
+    command: >
+      sh -c "npm install --include=dev &&
+      npm run build &&
+      npm run preview -- --host 0.0.0.0 --port 5174 --strictPort"
+    volumes:
+      - ./Frontends/Employees:/app
+      - employees_frontend_node_modules:/app/node_modules
+    ports:
+      - "5174:5174"
+    depends_on:
+      employees-api:
+        condition: service_started
+    networks:
+      - fortes_net
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: fortes_phpmyadmin
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=fortes
+      - PMA_PASSWORD=fortes_pass
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    networks:
+      - fortes_net
+
+networks:
+  fortes_net:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+  projects_frontend_node_modules:
+  employees_frontend_node_modules:
+
+

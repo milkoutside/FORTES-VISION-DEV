@@ -27,6 +27,12 @@ const ROW_PADDING = 18;
 const LANE_GAP = 8;
 let horizontalSyncLocked = false;
 let horizontalUnlockRaf = 0;
+const DEBUG_SCROLL = true;
+const logScroll = (...args) => {
+  if (DEBUG_SCROLL) {
+    console.debug('[EMP][Timeline]', ...args);
+  }
+};
 
 const dateIndexMap = computed(() => {
   const map = new Map();
@@ -158,6 +164,7 @@ const handleContainerScroll = (event) => {
   }
   horizontalSyncLocked = true;
   headerEl.scrollLeft = nextLeft;
+  logScroll('cells -> header', { left: nextLeft });
   if (horizontalUnlockRaf) {
     cancelAnimationFrame(horizontalUnlockRaf);
   }
@@ -177,6 +184,7 @@ const syncWithHeader = () => {
   }
   horizontalSyncLocked = true;
   containerRef.value.scrollLeft = nextLeft;
+  logScroll('header -> cells', { left: nextLeft });
   if (horizontalUnlockRaf) {
     cancelAnimationFrame(horizontalUnlockRaf);
   }

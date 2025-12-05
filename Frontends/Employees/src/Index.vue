@@ -9,6 +9,12 @@ import SettingsModal from './components/settings/SettingsModal.vue';
 import { getProjectColor } from './utils/colors';
 
 const store = useStore();
+const DEBUG_SCROLL = true;
+const logScroll = (...args) => {
+  if (DEBUG_SCROLL) {
+    console.debug('[EMP][Index][scroll]', ...args);
+  }
+};
 
 // Древовидная структура фильтров для TreeSelect
 const FILTER_TREE = [
@@ -87,6 +93,7 @@ const getTimelineScrollElement = () => timelineComponentRef.value?.getScrollElem
 
 const syncVerticalScroll = (event) => {
   if (verticalSyncLocked) {
+    logScroll('skip vertical (locked)', { source: event?.target?.className });
     return;
   }
   const treeEl = treeScrollRef.value;
@@ -95,8 +102,10 @@ const syncVerticalScroll = (event) => {
 
   verticalSyncLocked = true;
   if (event.target === treeEl) {
+    logScroll('tree -> timeline', { top: treeEl.scrollTop });
     timelineEl.scrollTop = treeEl.scrollTop;
   } else if (event.target === timelineEl) {
+    logScroll('timeline -> tree', { top: timelineEl.scrollTop });
     treeEl.scrollTop = timelineEl.scrollTop;
   }
   releaseVerticalLock();
@@ -409,6 +418,7 @@ const clearFilters = () => {
 
 onMounted(() => {
   ensureScrollSync();
+  logScroll('mounted sync attached');
 });
 
 onUnmounted(() => {
@@ -419,6 +429,7 @@ onUnmounted(() => {
   if (verticalUnlockRaf) {
     cancelAnimationFrame(verticalUnlockRaf);
   }
+  logScroll('unmounted, sync detached');
 });
 </script>
 

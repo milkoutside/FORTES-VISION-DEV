@@ -52,6 +52,12 @@ const contextMenuRef = ref(null);
 let calendarHeaderEl = null;
 let horizontalSyncLocked = false;
 let horizontalUnlockRaf = 0;
+const DEBUG_SCROLL = true;
+const logScroll = (...args) => {
+  if (DEBUG_SCROLL) {
+    console.debug('[PRJ][Cells]', ...args);
+  }
+};
 
 const allDates = computed(() => store.getters['calendar/allDates']);
 const blockWidth = computed(() => store.getters['calendar/blockWidth']);
@@ -985,6 +991,7 @@ const syncScrollFromCalendarHeader = () => {
   horizontalSyncLocked = true;
   cellsContainer.value.scrollLeft = targetLeft;
   releaseHorizontalLock();
+  logScroll('header -> cells', { left: targetLeft });
 };
 
 const handleScroll = (event) => {
@@ -996,6 +1003,7 @@ const handleScroll = (event) => {
   horizontalSyncLocked = true;
   calendarHeader.scrollLeft = targetLeft;
   releaseHorizontalLock();
+  logScroll('cells -> header', { left: targetLeft });
 };
 
 const handleCloseCalendarContextMenu = () => {
@@ -1021,6 +1029,7 @@ onMounted(() => {
   nextTick(() => {
     syncScrollFromCalendarHeader();
     requestAnimationFrame(syncScrollFromCalendarHeader);
+    logScroll('mounted sync');
   });
 });
 
@@ -1040,6 +1049,7 @@ onUnmounted(() => {
   if (horizontalUnlockRaf) {
     cancelAnimationFrame(horizontalUnlockRaf);
   }
+  logScroll('unmounted');
 });
 
 defineExpose({

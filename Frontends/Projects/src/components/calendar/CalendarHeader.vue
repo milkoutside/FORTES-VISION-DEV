@@ -3,6 +3,12 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
+const DEBUG_SCROLL = true;
+const logScroll = (...args) => {
+  if (DEBUG_SCROLL) {
+    console.debug('[PRJ][Header]', ...args);
+  }
+};
 
 const emit = defineEmits(['select']);
 
@@ -153,6 +159,7 @@ const ensureTodayInRange = async () => {
   } finally {
     isAutoNavigating.value = false;
   }
+  logScroll('ensureTodayInRange -> dispatch goToToday');
 };
 
 const findTodayCell = async () => {
@@ -190,9 +197,11 @@ const scrollToToday = async () => {
     left: targetScrollLeft,
     behavior: 'smooth',
   });
+  logScroll('scrollToToday', { targetScrollLeft, date: todayCell?.dataset?.date });
 
   setTimeout(() => {
     isProgrammaticScroll.value = false;
+    logScroll('scrollToToday done');
   }, 400);
 };
 
@@ -205,6 +214,7 @@ const resetScrollToStart = () => {
     left: 0,
     behavior: 'smooth',
   });
+  logScroll('resetScrollToStart');
 
   setTimeout(() => {
     isProgrammaticScroll.value = false;
@@ -215,6 +225,11 @@ const handleCalendarScroll = (event) => {
   const header = event.target;
 
   if (isProgrammaticScroll.value || isAutoNavigating.value) return;
+  logScroll('header scroll', {
+    left: header.scrollLeft,
+    atLeft: nearLeftEdge(header),
+    atRight: nearRightEdge(header),
+  });
 
   const atLeft = nearLeftEdge(header);
   const atRight = nearRightEdge(header);
@@ -293,6 +308,7 @@ const syncCalendarScroll = () => {
   requestAnimationFrame(() => {
     isProgrammaticScroll.value = false;
   });
+  logScroll('syncCalendarScroll -> cells', { left: header.scrollLeft });
 };
 
 onMounted(() => {

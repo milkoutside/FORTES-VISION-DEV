@@ -46,6 +46,16 @@ const rightProgress = ref(0);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const waitForFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
+const getScrollSyncState = () => {
+  if (typeof window === 'undefined') {
+    return { lockFromHeader: false, lockFromCells: false };
+  }
+  if (!window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__) {
+    window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__ = { lockFromHeader: false, lockFromCells: false };
+  }
+  return window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__;
+};
+
 const getHeaderEl = () => calendarHeader.value;
 
 const nearLeftEdge = (el) => (el ? el.scrollLeft <= EDGE_PROXIMITY_PX : false);
@@ -187,6 +197,8 @@ const scrollToToday = async () => {
   const cellWidth = finalCell.offsetWidth;
   const targetScrollLeft = Math.max(0, cellLeftWithinHeader - (headerWidth - cellWidth) / 2);
 
+  const syncState = getScrollSyncState();
+
   isProgrammaticScroll.value = true;
   const calendarCells = document.querySelector('.images-virtual-container');
   header.scrollTo({
@@ -195,9 +207,13 @@ const scrollToToday = async () => {
   });
 
   if (calendarCells) {
+    syncState.lockFromHeader = true;
     calendarCells.scrollTo({
       left: targetScrollLeft,
       behavior: 'smooth',
+    });
+    requestAnimationFrame(() => {
+      syncState.lockFromHeader = false;
     });
   }
 
@@ -216,6 +232,8 @@ const resetScrollToStart = () => {
   const header = getHeaderEl();
   if (!header) return;
 
+  const syncState = getScrollSyncState();
+
   isProgrammaticScroll.value = true;
   header.scrollTo({
     left: 0,
@@ -228,27 +246,38 @@ const resetScrollToStart = () => {
 
   const calendarCells = document.querySelector('.images-virtual-container');
   if (calendarCells) {
+    syncState.lockFromHeader = true;
     calendarCells.scrollLeft = 0;
+    requestAnimationFrame(() => {
+      syncState.lockFromHeader = false;
+    });
   }
+};
+
+const syncCellsScroll = (targetScrollLeft) => {
+  const calendarCells = document.querySelector('.images-virtual-container');
+  if (!calendarCells) return;
+
+  const syncState = getScrollSyncState();
+  if (syncState.lockFromCells) {
+    syncState.lockFromCells = false;
+    return;
+  }
+
+  if (calendarCells.scrollLeft === targetScrollLeft) return;
+
+  syncState.lockFromHeader = true;
+  calendarCells.scrollLeft = targetScrollLeft;
+  requestAnimationFrame(() => {
+    syncState.lockFromHeader = false;
+  });
 };
 
 const handleCalendarScroll = (event) => {
   const header = event.target;
-  
-  // Синхронизируем только если скролл НЕ программный
-  if (!isProgrammaticScroll.value && !isAutoNavigating.value) {
-    const targetScrollLeft = header.scrollLeft;
-    const calendarCells = document.querySelector('.images-virtual-container');
-    if (calendarCells && Math.abs(calendarCells.scrollLeft - targetScrollLeft) > 1) {
-      // Устанавливаем флаг чтобы избежать обратной синхронизации
-      isProgrammaticScroll.value = true;
-      calendarCells.scrollLeft = targetScrollLeft;
-      // Сбрасываем флаг через минимальное время
-      requestAnimationFrame(() => {
-        isProgrammaticScroll.value = false;
-      });
-    }
-  }
+  const targetScrollLeft = header.scrollLeft;
+
+  syncCellsScroll(targetScrollLeft);
 
   if (isProgrammaticScroll.value || isAutoNavigating.value) return;
 
@@ -320,10 +349,8 @@ const onWheel = (e) => {
 
 const syncCalendarScroll = () => {
   const header = getHeaderEl();
-  const calendarCells = document.querySelector('.images-virtual-container');
-  if (header && calendarCells) {
-    calendarCells.scrollLeft = header.scrollLeft;
-  }
+  if (!header) return;
+  syncCellsScroll(header.scrollLeft);
 };
 
 onMounted(() => {

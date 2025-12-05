@@ -26,6 +26,16 @@ const ROW_HEIGHT = 80;
 const ROW_PADDING = 18;
 const LANE_GAP = 8;
 
+const getScrollSyncState = () => {
+  if (typeof window === 'undefined') {
+    return { lockFromHeader: false, lockFromCells: false };
+  }
+  if (!window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__) {
+    window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__ = { lockFromHeader: false, lockFromCells: false };
+  }
+  return window.__EMPLOYEES_CALENDAR_SCROLL_SYNC__;
+};
+
 const dateIndexMap = computed(() => {
   const map = new Map();
   props.dates.forEach((date, index) => {
@@ -146,35 +156,42 @@ const getBarTooltip = (row, segment) => {
   return `${segment.projectName ?? row.label}: ${start} — ${end}`;
 };
 
-// Флаг для предотвращения циклической синхронизации
-let isSyncingScroll = false;
-
 const handleContainerScroll = (event) => {
-  if (isSyncingScroll || !headerEl) return;
-  
-  const targetScrollLeft = event.target.scrollLeft;
-  // Синхронизируем только если разница больше 1px
-  if (Math.abs(headerEl.scrollLeft - targetScrollLeft) > 1) {
-    isSyncingScroll = true;
-    headerEl.scrollLeft = targetScrollLeft;
-    requestAnimationFrame(() => {
-      isSyncingScroll = false;
-    });
+  if (!headerEl) return;
+
+  const syncState = getScrollSyncState();
+  if (syncState.lockFromHeader) {
+    syncState.lockFromHeader = false;
+    return;
   }
+
+  const targetLeft = event.target.scrollLeft;
+  if (headerEl.scrollLeft === targetLeft) return;
+
+  syncState.lockFromCells = true;
+  headerEl.scrollLeft = targetLeft;
+  requestAnimationFrame(() => {
+    syncState.lockFromCells = false;
+  });
 };
 
 const syncWithHeader = () => {
-  if (isSyncingScroll || !headerEl || !containerRef.value) return;
-  
-  const targetScrollLeft = headerEl.scrollLeft;
-  // Синхронизируем только если разница больше 1px
-  if (Math.abs(containerRef.value.scrollLeft - targetScrollLeft) > 1) {
-    isSyncingScroll = true;
-    containerRef.value.scrollLeft = targetScrollLeft;
-    requestAnimationFrame(() => {
-      isSyncingScroll = false;
-    });
+  if (!headerEl || !containerRef.value) return;
+
+  const syncState = getScrollSyncState();
+  if (syncState.lockFromCells) {
+    syncState.lockFromCells = false;
+    return;
   }
+
+  const targetLeft = headerEl.scrollLeft;
+  if (containerRef.value.scrollLeft === targetLeft) return;
+
+  syncState.lockFromHeader = true;
+  containerRef.value.scrollLeft = targetLeft;
+  requestAnimationFrame(() => {
+    syncState.lockFromHeader = false;
+  });
 };
 
 onMounted(() => {

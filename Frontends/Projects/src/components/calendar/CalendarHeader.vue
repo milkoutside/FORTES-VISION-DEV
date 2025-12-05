@@ -44,6 +44,17 @@ const leftProgress = ref(0);
 const rightProgress = ref(0);
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const waitForFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
+const getScrollSyncState = () => {
+  if (typeof window === 'undefined') {
+    return { lockFromHeader: false, lockFromCells: false };
+  }
+  if (!window.__PROJECTS_CALENDAR_SCROLL_SYNC__) {
+    window.__PROJECTS_CALENDAR_SCROLL_SYNC__ = { lockFromHeader: false, lockFromCells: false };
+  }
+  return window.__PROJECTS_CALENDAR_SCROLL_SYNC__;
+};
 
 const getHeaderEl = () => calendarHeader.value;
 
@@ -139,8 +150,6 @@ const goToNextThreeMonths = async (fromAuto = false) => {
   }, 400);
 };
 
-const waitForFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
-
 const ensureTodayInRange = async () => {
   const today = store.getters['calendar/today'];
   const allDates = threeMonthsData.value.flatMap((month) => month.dates);
@@ -176,17 +185,19 @@ const scrollToToday = async () => {
   const header = getHeaderEl();
   if (!header) return;
 
-  const finalCell = await findTodayCell();
-  if (!finalCell) return;
+  const todayCell = await findTodayCell();
+  if (!todayCell) return;
 
   await waitForFrame();
 
   const headerRect = header.getBoundingClientRect();
-  const cellRect = finalCell.getBoundingClientRect();
+  const cellRect = todayCell.getBoundingClientRect();
   const cellLeftWithinHeader = cellRect.left - headerRect.left + header.scrollLeft;
   const headerWidth = header.clientWidth;
-  const cellWidth = finalCell.offsetWidth;
+  const cellWidth = todayCell.offsetWidth;
   const targetScrollLeft = Math.max(0, cellLeftWithinHeader - (headerWidth - cellWidth) / 2);
+
+  const syncState = getScrollSyncState();
 
   isProgrammaticScroll.value = true;
   header.scrollTo({
@@ -194,21 +205,17 @@ const scrollToToday = async () => {
     behavior: 'smooth',
   });
 
-  // Синхронизируем контейнер ячеек
   const calendarCells = document.querySelector('.images-virtual-container');
   if (calendarCells) {
+    syncState.lockFromHeader = true;
     calendarCells.scrollTo({
       left: targetScrollLeft,
       behavior: 'smooth',
     });
-  }
-
-  // Двойной requestAnimationFrame для надежности
-  requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      isProgrammaticScroll.value = false;
+      syncState.lockFromHeader = false;
     });
-  });
+  }
 
   setTimeout(() => {
     isProgrammaticScroll.value = false;
@@ -218,6 +225,8 @@ const scrollToToday = async () => {
 const resetScrollToStart = () => {
   const header = getHeaderEl();
   if (!header) return;
+
+  const syncState = getScrollSyncState();
 
   isProgrammaticScroll.value = true;
   header.scrollTo({
@@ -231,27 +240,38 @@ const resetScrollToStart = () => {
 
   const calendarCells = document.querySelector('.images-virtual-container');
   if (calendarCells) {
+    syncState.lockFromHeader = true;
     calendarCells.scrollLeft = 0;
+    requestAnimationFrame(() => {
+      syncState.lockFromHeader = false;
+    });
   }
+};
+
+const syncCellsScroll = (targetScrollLeft) => {
+  const calendarCells = document.querySelector('.images-virtual-container');
+  if (!calendarCells) return;
+
+  const syncState = getScrollSyncState();
+  if (syncState.lockFromCells) {
+    syncState.lockFromCells = false;
+    return;
+  }
+
+  if (calendarCells.scrollLeft === targetScrollLeft) return;
+
+  syncState.lockFromHeader = true;
+  calendarCells.scrollLeft = targetScrollLeft;
+  requestAnimationFrame(() => {
+    syncState.lockFromHeader = false;
+  });
 };
 
 const handleCalendarScroll = (event) => {
   const header = event.target;
-  
-  // Синхронизируем только если скролл НЕ программный
-  if (!isProgrammaticScroll.value && !isAutoNavigating.value) {
-    const targetScrollLeft = header.scrollLeft;
-    const calendarCells = document.querySelector('.images-virtual-container');
-    if (calendarCells && Math.abs(calendarCells.scrollLeft - targetScrollLeft) > 1) {
-      // Устанавливаем флаг чтобы избежать обратной синхронизации
-      isProgrammaticScroll.value = true;
-      calendarCells.scrollLeft = targetScrollLeft;
-      // Сбрасываем флаг через минимальное время
-      requestAnimationFrame(() => {
-        isProgrammaticScroll.value = false;
-      });
-    }
-  }
+  const targetScrollLeft = header.scrollLeft;
+
+  syncCellsScroll(targetScrollLeft);
 
   if (isProgrammaticScroll.value || isAutoNavigating.value) return;
 
@@ -323,10 +343,8 @@ const onWheel = (e) => {
 
 const syncCalendarScroll = () => {
   const header = getHeaderEl();
-  const calendarCells = document.querySelector('.images-virtual-container');
-  if (header && calendarCells) {
-    calendarCells.scrollLeft = header.scrollLeft;
-  }
+  if (!header) return;
+  syncCellsScroll(header.scrollLeft);
 };
 
 onMounted(() => {

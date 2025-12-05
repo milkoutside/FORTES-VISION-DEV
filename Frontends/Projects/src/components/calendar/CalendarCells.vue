@@ -50,6 +50,16 @@ const cellsContainer = ref(null);
 const cellsScrollWrapper = ref(null);
 const contextMenuRef = ref(null);
 
+const getScrollSyncState = () => {
+  if (typeof window === 'undefined') {
+    return { lockFromHeader: false, lockFromCells: false };
+  }
+  if (!window.__PROJECTS_CALENDAR_SCROLL_SYNC__) {
+    window.__PROJECTS_CALENDAR_SCROLL_SYNC__ = { lockFromHeader: false, lockFromCells: false };
+  }
+  return window.__PROJECTS_CALENDAR_SCROLL_SYNC__;
+};
+
 const allDates = computed(() => store.getters['calendar/allDates']);
 const blockWidth = computed(() => store.getters['calendar/blockWidth']);
 const isWeekendFn = computed(() => store.getters['calendar/isWeekend']);
@@ -956,41 +966,46 @@ const confirmAttachUsers = async () => {
   }
 };
 
-// Синхронизация скролла с защитой от циклов
-const isSyncingScroll = ref(false);
-
+// Синхронизация скролла
 const syncScrollFromCalendarHeader = () => {
-  if (isSyncingScroll.value) return;
-  
   const calendarHeader = document.getElementById('calendar-dates-scroll');
-  if (calendarHeader && cellsContainer.value) {
-    const targetScrollLeft = calendarHeader.scrollLeft;
-    // Синхронизируем только если разница больше 1px (избегаем микроколебаний)
-    if (Math.abs(cellsContainer.value.scrollLeft - targetScrollLeft) > 1) {
-      isSyncingScroll.value = true;
-      cellsContainer.value.scrollLeft = targetScrollLeft;
-      requestAnimationFrame(() => {
-        isSyncingScroll.value = false;
-      });
-    }
+  if (!calendarHeader || !cellsContainer.value) return;
+
+  const syncState = getScrollSyncState();
+
+  if (syncState.lockFromHeader) {
+    syncState.lockFromHeader = false;
+    return;
   }
+
+  const targetLeft = calendarHeader.scrollLeft;
+  if (cellsContainer.value.scrollLeft === targetLeft) return;
+
+  syncState.lockFromHeader = true;
+  cellsContainer.value.scrollLeft = targetLeft;
+  requestAnimationFrame(() => {
+    syncState.lockFromHeader = false;
+  });
 };
 
 const handleScroll = (event) => {
-  if (isSyncingScroll.value) return;
-  
   const calendarHeader = document.getElementById('calendar-dates-scroll');
-  if (calendarHeader) {
-    const targetScrollLeft = event.target.scrollLeft;
-    // Синхронизируем только если разница больше 1px
-    if (Math.abs(calendarHeader.scrollLeft - targetScrollLeft) > 1) {
-      isSyncingScroll.value = true;
-      calendarHeader.scrollLeft = targetScrollLeft;
-      requestAnimationFrame(() => {
-        isSyncingScroll.value = false;
-      });
-    }
+  if (!calendarHeader) return;
+
+  const syncState = getScrollSyncState();
+  if (syncState.lockFromHeader) {
+    syncState.lockFromHeader = false;
+    return;
   }
+
+  const targetLeft = event.target.scrollLeft;
+  if (calendarHeader.scrollLeft === targetLeft) return;
+
+  syncState.lockFromCells = true;
+  calendarHeader.scrollLeft = targetLeft;
+  requestAnimationFrame(() => {
+    syncState.lockFromCells = false;
+  });
 };
 
 const handleCloseCalendarContextMenu = () => {
@@ -1012,9 +1027,16 @@ onMounted(() => {
   // Слушаем событие закрытия меню от ProjectsList
   window.addEventListener('close-calendar-context-menu', handleCloseCalendarContextMenu);
 
-  // Синхронизируем скролл только один раз после монтирования
+  // Синхронизируем скролл сразу и после рендеринга
   nextTick(() => {
     syncScrollFromCalendarHeader();
+    // Дополнительная синхронизация с задержкой для плавной прокрутки
+    setTimeout(() => {
+      syncScrollFromCalendarHeader();
+    }, 100);
+    setTimeout(() => {
+      syncScrollFromCalendarHeader();
+    }, 500);
   });
 });
 

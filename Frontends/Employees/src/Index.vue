@@ -71,21 +71,12 @@ const activeFiltersCount = computed(() => {
   return count;
 });
 
-// Функция для правильного склонения слова "фильтр"
+// Function for correct pluralization of the word "filter"
 const getFilterWord = (count) => {
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-  
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
-    return 'фильтров';
+  if (count === 1) {
+    return 'filter';
   }
-  if (lastDigit === 1) {
-    return 'фильтр';
-  }
-  if (lastDigit >= 2 && lastDigit <= 4) {
-    return 'фильтра';
-  }
-  return 'фильтров';
+  return 'filters';
 };
 
 const treeScrollRef = ref(null);
@@ -479,7 +470,7 @@ onUnmounted(() => {
                     v-model="selectedFilters"
                     :options="FILTER_TREE"
                     selectionMode="checkbox"
-                    placeholder="Выберите фильтры"
+                    placeholder="Select filters"
                     class="filter-tree-select"
                     display="comma"
                     style="width: 100%;"
@@ -488,7 +479,7 @@ onUnmounted(() => {
                     v-if="hasActiveFilters" 
                     class="filter-count-text"
                   >
-                    Выбрано {{ activeFiltersCount }} {{ getFilterWord(activeFiltersCount) }}
+                    Selected {{ activeFiltersCount }} {{ getFilterWord(activeFiltersCount) }}
                   </span>
                 </div>
                 <button 
@@ -496,7 +487,7 @@ onUnmounted(() => {
                   class="clear-filters-icon"
                   type="button"
                   @click="clearFilters"
-                  title="Очистить фильтры"
+                  title="Clear filters"
                 >
                   <i class="pi pi-times-circle"></i>
                 </button>

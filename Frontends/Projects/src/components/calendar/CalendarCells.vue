@@ -720,33 +720,15 @@ const performSafely = async (callback) => {
   }
 };
 
-const handleFillSelection = async () => {
-  if (!selectedStatusId.value) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Select a status',
-      detail: 'To fill cells, select a status above first.',
-      life: 4000,
-    });
-    return;
-  }
+// Внутренний метод для заполнения с конкретным statusId
+const handleFillSelectionWithStatusId = async (statusId) => {
   if (!selectedCellsList.value.length) return;
   await performSafely(async () => {
     try {
-      // Группируем ячейки по imageId для обработки
-      const cellsByImage = new Map();
-      selectedCellsList.value.forEach(cell => {
-        const key = `${cell.projectId}:${cell.batchId}:${cell.imageId}`;
-        if (!cellsByImage.has(key)) {
-          cellsByImage.set(key, []);
-        }
-        cellsByImage.get(key).push(cell);
-      });
-      
       const result = await store.dispatch('tasks/applyStatusToCells', {
         cells: selectedCellsList.value,
-        statusId: selectedStatusId.value,
-        groupByWeekends: true, // Флаг для группировки через выходные
+        statusId: statusId,
+        groupByWeekends: true,
       });
       toast.add({
         severity: 'success',
@@ -764,6 +746,20 @@ const handleFillSelection = async () => {
       });
     }
   });
+};
+
+const handleFillSelection = async () => {
+  if (!selectedStatusId.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Select a status',
+      detail: 'To fill cells, select a status above first.',
+      life: 4000,
+    });
+    return;
+  }
+  if (!selectedCellsList.value.length) return;
+  await handleFillSelectionWithStatusId(selectedStatusId.value);
 };
 
 const handleClearSelection = async () => {
@@ -1011,6 +1007,8 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
   // Слушаем событие закрытия меню от ProjectsList
   window.addEventListener('close-calendar-context-menu', handleCloseCalendarContextMenu);
+  // Слушаем событие заполнения ячеек статусом из StatusPicker
+  window.addEventListener('fill-selected-cells-with-status', handleFillSelectedCellsEvent);
 
   // Синхронизируем скролл сразу и после рендеринга
   nextTick(() => {
@@ -1033,12 +1031,38 @@ onUnmounted(() => {
   window.removeEventListener('click', handleDocumentClick);
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('close-calendar-context-menu', handleCloseCalendarContextMenu);
+  window.removeEventListener('fill-selected-cells-with-status', handleFillSelectedCellsEvent);
   logScroll('unmounted');
 });
+
+// Метод для заполнения выделенных ячеек статусом (доступен извне)
+const fillSelectedCellsWithStatus = async (statusId) => {
+  if (!statusId) {
+    return;
+  }
+  // Проверяем выделение через selectedCellsCount для более надежной проверки
+  // Если выделения нет, просто ничего не делаем
+  if (!selectedCellsCount.value) {
+    return;
+  }
+  await handleFillSelectionWithStatusId(statusId);
+};
+
+// Обработчик глобального события для заполнения ячеек статусом
+const handleFillSelectedCellsEvent = (event) => {
+  const { statusId } = event.detail || {};
+  if (statusId) {
+    // Используем nextTick, чтобы убедиться, что выделение не потерялось из-за других обработчиков
+    nextTick(() => {
+      void fillSelectedCellsWithStatus(statusId);
+    });
+  }
+};
 
 defineExpose({
   syncScroll: syncScrollFromCalendarHeader,
   cellsScrollWrapper,
+  fillSelectedCellsWithStatus,
 });
 </script>
 

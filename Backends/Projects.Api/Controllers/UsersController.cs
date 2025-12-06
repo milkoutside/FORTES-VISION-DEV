@@ -77,6 +77,26 @@ public class UsersController : ControllerBase
         await _db.SaveChangesAsync(ct);
         return Ok(ApiResponse.Success<object?>(null, "User deleted successfully."));
     }
+
+    [HttpGet("project-managers")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<UserResponse>>>> GetProjectManagers([FromQuery] string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.Users.Where(u => u.Role == "project_manager");
+        
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(u => EF.Functions.Like(u.Name, term));
+        }
+        
+        var projectManagers = await query
+            .OrderBy(u => u.Name)
+            .AsNoTracking()
+            .ToListAsync(ct);
+        
+        var data = projectManagers.Select(u => new UserResponse(u.Id, u.Name, u.Role));
+        return Ok(ApiResponse.Success(data, "Project managers retrieved successfully."));
+    }
 }
 
 

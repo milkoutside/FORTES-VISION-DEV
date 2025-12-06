@@ -43,6 +43,68 @@ public class ProjectsController : ControllerBase
                 _db.ProjectUsers.Any(pu => pu.ProjectId == p.Id && ids.Contains(pu.UserId)));
         }
 
+        // Фильтр по проджект менеджерам
+        if (query.ManagerIds is { Length: > 0 })
+        {
+            var managerIds = query.ManagerIds.Distinct().ToArray();
+            // Проверяем роль пользователя из таблицы Users, а не из ProjectUser
+            // так как в ответе API роль берется из Users, а не из ProjectUser
+            // Это важно, потому что при обновлении проекта роль в ProjectUser может быть установлена неправильно
+            projectQuery = projectQuery.Where(p =>
+                _db.ProjectUsers
+                    .Join(_db.Users, pu => pu.UserId, u => u.Id, (pu, u) => new { pu, u })
+                    .Any(x => x.pu.ProjectId == p.Id && 
+                              managerIds.Contains(x.pu.UserId) && 
+                              x.u.Role == "project_manager"));
+        }
+
+        // Фильтр по статусу проекта (открыт/закрыт)
+        if (query.ProjectStatus is { Length: > 0 })
+        {
+            var statuses = query.ProjectStatus.Select(s => s.ToLower()).Distinct().ToArray();
+            if (statuses.Contains("active") && !statuses.Contains("inactive"))
+            {
+                projectQuery = projectQuery.Where(p => p.IsActive);
+            }
+            else if (statuses.Contains("inactive") && !statuses.Contains("active"))
+            {
+                projectQuery = projectQuery.Where(p => !p.IsActive);
+            }
+        }
+
+        // Фильтр по типу дедлайна
+        if (query.DeadlineTypes is { Length: > 0 })
+        {
+            var types = query.DeadlineTypes.Select(t => t.ToLower()).Distinct().ToArray();
+            var deadlineTypes = new List<DeadlineType>();
+            if (types.Contains("hard"))
+            {
+                deadlineTypes.Add(DeadlineType.Hard);
+            }
+            if (types.Contains("soft"))
+            {
+                deadlineTypes.Add(DeadlineType.Soft);
+            }
+            if (deadlineTypes.Count > 0)
+            {
+                projectQuery = projectQuery.Where(p => deadlineTypes.Contains(p.DeadlineType));
+            }
+        }
+
+        // Фильтр по дате проекта (от)
+        if (query.DateFrom.HasValue)
+        {
+            projectQuery = projectQuery.Where(p => p.StartDate >= query.DateFrom.Value || 
+                                                   (p.EndDate.HasValue && p.EndDate >= query.DateFrom.Value));
+        }
+
+        // Фильтр по дате проекта (до)
+        if (query.DateTo.HasValue)
+        {
+            projectQuery = projectQuery.Where(p => (p.StartDate.HasValue && p.StartDate <= query.DateTo.Value) || 
+                                                   p.EndDate <= query.DateTo.Value);
+        }
+
         var perPage = Math.Max(1, query.PerPage);
         var currentPage = Math.Max(1, query.Page);
         var total = await projectQuery.CountAsync(ct);
@@ -181,27 +243,39 @@ public class ProjectsController : ControllerBase
         if (req.Users != null)
         {
             var selected = req.Users.Distinct().ToArray();
-            var existing = await _db.ProjectUsers.Where(x => x.ProjectId == project.Id && selected.Contains(x.UserId)).ToListAsync(ct);
-
-            var existingByUser = existing.ToDictionary(x => x.UserId, x => x);
-            var toKeep = new List<ProjectUser>();
-            foreach (var uid in selected)
-            {
-                if (existingByUser.TryGetValue(uid, out var ex))
-                {
-                    toKeep.Add(ex);
-                }
-                else
-                {
-                    toKeep.Add(new ProjectUser { ProjectId = project.Id, UserId = uid, Role = ParticipantRole.Freelancer });
-                }
-            }
-
+            
+            // Получаем все текущие связи проекта
             var current = await _db.ProjectUsers.Where(x => x.ProjectId == project.Id).ToListAsync(ct);
-            _db.ProjectUsers.RemoveRange(current);
-            if (toKeep.Count > 0)
+            var currentUserIds = current.Select(x => x.UserId).ToHashSet();
+            var selectedUserIds = selected.ToHashSet();
+            
+            // Определяем, какие связи нужно удалить (есть в текущих, но нет в выбранных)
+            var toRemove = current.Where(x => !selectedUserIds.Contains(x.UserId)).ToList();
+            if (toRemove.Count > 0)
             {
-                await _db.ProjectUsers.AddRangeAsync(toKeep, ct);
+                _db.ProjectUsers.RemoveRange(toRemove);
+            }
+            
+            // Определяем, какие связи нужно добавить (есть в выбранных, но нет в текущих)
+            var toAddUserIds = selectedUserIds.Where(uid => !currentUserIds.Contains(uid)).ToArray();
+            if (toAddUserIds.Length > 0)
+            {
+                // Получаем информацию о пользователях для определения их ролей
+                var users = await _db.Users.Where(u => toAddUserIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, ct);
+                
+                var toAdd = new List<ProjectUser>();
+                foreach (var uid in toAddUserIds)
+                {
+                    // Определяем роль пользователя из таблицы Users
+                    var role = ParticipantRole.Freelancer;
+                    if (users.TryGetValue(uid, out var user))
+                    {
+                        role = ParseRole(user.Role);
+                    }
+                    toAdd.Add(new ProjectUser { ProjectId = project.Id, UserId = uid, Role = role });
+                }
+                
+                await _db.ProjectUsers.AddRangeAsync(toAdd, ct);
             }
         }
 

@@ -21,6 +21,11 @@ public class ProjectIndexQuery
     public int PerPage { get; set; } = 10;
     public string? Search { get; set; }
     public long[]? UserIds { get; set; }
+    public long[]? ManagerIds { get; set; }
+    public string[]? ProjectStatus { get; set; }
+    public string[]? DeadlineTypes { get; set; }
+    public DateOnly? DateFrom { get; set; }
+    public DateOnly? DateTo { get; set; }
 }
 
 public class CreateProjectRequest

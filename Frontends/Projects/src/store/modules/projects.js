@@ -8,6 +8,13 @@ const initialState = () => ({
   error: null,
   pagination: null,
   searchQuery: '',
+  filters: {
+    managerIds: [],
+    projectStatus: [],
+    deadlineTypes: [],
+    dateFrom: null,
+    dateTo: null,
+  },
   hasMore: true,
   currentPage: 1,
   perPage: 100,
@@ -40,6 +47,18 @@ const mutations = {
   setSearchQuery(state, query) {
     state.searchQuery = query ?? '';
   },
+  setFilters(state, filters) {
+    state.filters = { ...state.filters, ...filters };
+  },
+  clearFilters(state) {
+    state.filters = {
+      managerIds: [],
+      projectStatus: [],
+      deadlineTypes: [],
+      dateFrom: null,
+      dateTo: null,
+    };
+  },
   setCurrentPage(state, page) {
     state.currentPage = page;
   },
@@ -61,10 +80,11 @@ const mutations = {
 };
 
 const actions = {
-  async fetchAll({ commit, state }, { reset = false, search = null } = {}) {
+  async fetchAll({ commit, state }, { reset = false, search = null, filters = null } = {}) {
     if (state.isLoading) return;
     
     const searchQuery = search !== null ? search : state.searchQuery;
+    const currentFilters = filters !== null ? filters : state.filters;
     const page = reset ? 1 : state.currentPage;
     
     commit('setLoading', true);
@@ -74,6 +94,9 @@ const actions = {
       commit('setItems', []);
       commit('setCurrentPage', 1);
       commit('setSearchQuery', searchQuery);
+      if (filters !== null) {
+        commit('setFilters', filters);
+      }
     }
     
     try {
@@ -81,6 +104,11 @@ const actions = {
         page,
         perPage: state.perPage,
         search: searchQuery || null,
+        managerIds: currentFilters.managerIds?.length > 0 ? currentFilters.managerIds : null,
+        projectStatus: currentFilters.projectStatus?.length > 0 ? currentFilters.projectStatus : null,
+        deadlineTypes: currentFilters.deadlineTypes?.length > 0 ? currentFilters.deadlineTypes : null,
+        dateFrom: currentFilters.dateFrom || null,
+        dateTo: currentFilters.dateTo || null,
       });
       
       if (reset) {
@@ -110,6 +138,11 @@ const actions = {
         page: nextPage,
         perPage: state.perPage,
         search: state.searchQuery || null,
+        managerIds: state.filters.managerIds?.length > 0 ? state.filters.managerIds : null,
+        projectStatus: state.filters.projectStatus?.length > 0 ? state.filters.projectStatus : null,
+        deadlineTypes: state.filters.deadlineTypes?.length > 0 ? state.filters.deadlineTypes : null,
+        dateFrom: state.filters.dateFrom || null,
+        dateTo: state.filters.dateTo || null,
       });
       
       commit('appendItems', result.data);
@@ -124,6 +157,14 @@ const actions = {
   },
   async search({ dispatch }, query) {
     await dispatch('fetchAll', { reset: true, search: query });
+  },
+  async applyFilters({ dispatch, commit }, filters) {
+    commit('setFilters', filters);
+    await dispatch('fetchAll', { reset: true, filters });
+  },
+  async clearAllFilters({ dispatch, commit }) {
+    commit('clearFilters');
+    await dispatch('fetchAll', { reset: true });
   },
   async create({ commit }, payload) {
     commit('setSaving', true);

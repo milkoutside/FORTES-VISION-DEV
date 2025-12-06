@@ -204,12 +204,12 @@ const confirmRemoval = (status) => {
 </script>
 
 <template>
-  <section class="status-manager container-fluid py-3">
-    <div class="card shadow-sm border-0 rounded-4">
-      <div class="card-body d-flex flex-column">
+  <section class="status-manager container-fluid py-3 h-100">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-body d-flex flex-column h-100">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-3">
-          <h5 class="mb-0">Status list</h5>
-          <div class="d-flex flex-column flex-md-row align-items-stretch gap-2 w-100 w-lg-auto">
+          <h5 class="mb-0 section-title">Status list</h5>
+          <div class="control-toolbar d-flex flex-column flex-md-row align-items-stretch gap-2 w-100 w-lg-auto">
             <div class="search-box d-flex align-items-center gap-2 flex-grow-1">
               <span class="pi pi-search text-muted"></span>
               <InputText
@@ -233,8 +233,8 @@ const confirmRemoval = (status) => {
           :loading="isLoading"
           dataKey="id"
           scrollable
-          scrollHeight="440px"
-          class="status-table flex-grow-1"
+          scrollHeight="flex"
+          class="status-table flex-grow-1 h-100"
         >
           <Column field="name" header="Name" sortable>
             <template #body="{ data }">
@@ -376,10 +376,6 @@ const confirmRemoval = (status) => {
 </template>
 
 <style scoped>
-.status-manager {
-  background-color: transparent;
-}
-
 .color-dot {
   width: 16px;
   height: 16px;
@@ -388,10 +384,53 @@ const confirmRemoval = (status) => {
 
 .search-box {
   max-width: 320px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  padding: 0.2rem 0.75rem;
+  background-color: transparent;
+}
+
+.search-box :deep(.p-inputtext) {
+  padding: 0;
+  min-height: 32px;
+  border: 0;
+  box-shadow: none;
+}
+
+.control-toolbar {
+  flex-wrap: nowrap;
+  flex: 1 1 0;
 }
 
 .inline-input :deep(.p-inputtext) {
   width: 100%;
+}
+
+.section-title {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-manager {
+  background-color: transparent;
+  height: 100%;
+}
+
+.status-manager .card,
+.status-manager .card-body {
+  height: 100%;
+}
+
+.status-manager .card-body {
+  min-height: 0;
+}
+
+.status-manager :deep(.p-datatable) {
+  height: 100%;
+}
+
+.status-manager :deep(.p-datatable-wrapper) {
+  height: 100%;
 }
 </style>
 

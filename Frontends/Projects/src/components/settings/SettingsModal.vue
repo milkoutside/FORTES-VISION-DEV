@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import StatusManager from './StatusManager.vue';
 import UserManager from './UserManager.vue';
 
@@ -16,6 +16,8 @@ const internalVisible = computed({
   get: () => props.visible,
   set: (value) => emit('update:visible', value),
 });
+
+const activeTab = ref('statuses');
 </script>
 
 <template>
@@ -30,14 +32,20 @@ const internalVisible = computed({
     :style="{ width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh', margin: 0, top: 0 }"
     :contentStyle="{ height: 'calc(100vh - 80px)', overflow: 'auto' }"
   >
-    <TabView lazy class="settings-tabs">
-      <TabPanel header="Statuses">
-        <StatusManager />
-      </TabPanel>
-      <TabPanel header="Users">
-        <UserManager />
-      </TabPanel>
-    </TabView>
+    <Tabs v-model:value="activeTab" class="settings-tabs">
+      <TabList>
+        <Tab value="statuses">Statuses</Tab>
+        <Tab value="users">Users</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="statuses">
+          <StatusManager />
+        </TabPanel>
+        <TabPanel value="users">
+          <UserManager />
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   </Dialog>
 </template>
 
@@ -59,7 +67,27 @@ const internalVisible = computed({
 }
 
 .settings-tabs {
-  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-tabs :deep(.p-tabpanels) {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-tabs :deep(.p-tabpanel) {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 </style>
 

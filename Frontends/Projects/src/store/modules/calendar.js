@@ -25,7 +25,7 @@ const addMonths = (date, delta) => {
 };
 
 const formatMonthName = (date) => {
-  const formatter = new Intl.DateTimeFormat('ru-RU', { month: 'long' });
+  const formatter = new Intl.DateTimeFormat('en-US', { month: 'long' });
   const name = formatter.format(date);
   return name.charAt(0).toUpperCase() + name.slice(1);
 };

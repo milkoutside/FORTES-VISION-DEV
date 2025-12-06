@@ -453,8 +453,8 @@ defineExpose({
 .calendar-container {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: white;
-  height: 152px;
-  min-height: 152px;
+  height: 146px;
+  min-height: 146px;
   position: sticky;
   top: 0;
   z-index: 10;

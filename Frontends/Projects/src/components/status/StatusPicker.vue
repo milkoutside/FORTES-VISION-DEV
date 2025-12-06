@@ -49,8 +49,14 @@ const ensureStatusesLoaded = async () => {
 };
 
 const selectStatus = (statusId) => {
-  if (selectedStatusId.value === statusId) return;
+  // Выбираем статус в store (даже если он уже выбран)
   store.dispatch('statuses/select', statusId);
+  
+  // Отправляем событие для заполнения выделенных ячеек этим статусом
+  // Отправляем всегда, даже если статус уже был выбран, чтобы можно было повторно закрасить
+  window.dispatchEvent(new CustomEvent('fill-selected-cells-with-status', {
+    detail: { statusId },
+  }));
 };
 
 const statusStyle = (status) => {

@@ -14,6 +14,7 @@ const defaultPagination = {
 
 const initialState = () => ({
   items: [],
+  projectManagers: [],
   pagination: defaultPagination,
   isLoading: false,
   isSaving: false,
@@ -30,6 +31,9 @@ const mutations = {
   },
   setItems(state, items) {
     state.items = items;
+  },
+  setProjectManagers(state, managers) {
+    state.projectManagers = managers;
   },
   setPagination(state, pagination) {
     state.pagination = pagination ?? defaultPagination;
@@ -124,15 +128,26 @@ const actions = {
       commit('setSaving', false);
     }
   },
+  async fetchProjectManagers({ commit }, search = '') {
+    try {
+      console.log('[users store] Начинаем загрузку менеджеров с поиском:', search);
+      const { fetchProjectManagers } = await import('../../repositories/usersRepository');
+      const managers = await fetchProjectManagers(search);
+      console.log('[users store] Менеджеры получены:', managers);
+      commit('setProjectManagers', managers);
+      console.log('[users store] Менеджеры сохранены в state');
+      return managers;
+    } catch (error) {
+      console.error('[users store] Ошибка загрузки менеджеров:', error);
+      throw error;
+    }
+  },
   async searchProjectManagers(_, params = {}) {
-    const { search = '', limit = 10 } = params;
-    const { items } = await fetchUsers({
-      role: 'project_manager',
-      search,
-      limit,
-      page: 1,
-    });
-    return items;
+    const { search = '' } = params;
+    const { fetchProjectManagers } = await import('../../repositories/usersRepository');
+    // Используем специальный endpoint для менеджеров с поддержкой поиска
+    const managers = await fetchProjectManagers(search);
+    return managers;
   },
   async search(_, params = {}) {
     const { search = '', limit = 20 } = params;

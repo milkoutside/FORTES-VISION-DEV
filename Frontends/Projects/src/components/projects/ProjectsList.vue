@@ -4,6 +4,7 @@ import { useStore } from 'vuex';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import ProjectContextMenu from './ProjectContextMenu.vue';
+import ProjectsFilter from './ProjectsFilter.vue';
 import EditProjectModal from './EditProjectModal.vue';
 import CreateBatchModal from './CreateBatchModal.vue';
 import BatchContextMenu from './BatchContextMenu.vue';
@@ -51,6 +52,11 @@ const handleSearch = () => {
   searchTimeout.value = setTimeout(() => {
     store.dispatch('projects/search', searchInput.value || '');
   }, 300);
+};
+
+const handleFilterChange = (filters) => {
+  console.log('[ProjectsList] Применяем фильтры:', filters);
+  store.dispatch('projects/applyFilters', filters);
 };
 
 const handleScroll = () => {
@@ -481,14 +487,7 @@ defineExpose({
 
     <!-- Фильтры -->
     <div class="projects-list__filters p-3 border-bottom">
-      <div class="position-relative">
-        <i class="pi pi-filter position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-        <InputText
-          placeholder="Filters..."
-          class="w-100 ps-5"
-          disabled
-        />
-      </div>
+      <ProjectsFilter @filter-change="handleFilterChange" />
     </div>
 
     <!-- Список проектов -->
@@ -521,7 +520,7 @@ defineExpose({
           >
             <div class="d-flex align-items-center justify-content-between">
               <div class="flex-grow-1" style="min-width: 0; padding-left: 12px;">
-                <div class="fw-semibold text-truncate">{{ project.name }}</div>
+                <div class="fw-semibold text-truncate" :class="{ 'text-danger': !project.isActive }">{{ project.name }}</div>
                 <div v-if="project.clientName" class="text-muted small text-truncate">
                   Client: {{ project.clientName }}
                 </div>

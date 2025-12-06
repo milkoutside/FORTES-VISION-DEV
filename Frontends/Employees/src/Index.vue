@@ -71,6 +71,23 @@ const activeFiltersCount = computed(() => {
   return count;
 });
 
+// Функция для правильного склонения слова "фильтр"
+const getFilterWord = (count) => {
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return 'фильтров';
+  }
+  if (lastDigit === 1) {
+    return 'фильтр';
+  }
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return 'фильтра';
+  }
+  return 'фильтров';
+};
+
 const treeScrollRef = ref(null);
 const timelineComponentRef = ref(null);
 const calendarHeaderRef = ref(null);
@@ -277,9 +294,9 @@ const filteredWorkloads = computed(() => {
       if (hasActive && hasInactive) {
         return true;
       } else if (hasActive) {
-        return user.projects.some(project => project.projectIsActive);
+        return user.projects.some(project => project.isActive);
       } else if (hasInactive) {
-        return user.projects.some(project => !project.projectIsActive);
+        return user.projects.some(project => !project.isActive);
       }
       
       return true;
@@ -454,20 +471,32 @@ onUnmounted(() => {
             </div>
             <div class="control-section">
               <div class="control-input control-filters">
-                <TreeSelect
-                  v-model="selectedFilters"
-                  :options="FILTER_TREE"
-                  selectionMode="checkbox"
-                  :placeholder="hasActiveFilters ? `Filters (${activeFiltersCount})` : 'Select filters'"
-                  class="filter-tree-select"
-                  display="chip"
-                />
+                <div 
+                  class="filter-tree-select-wrapper"
+                  :class="{ 'has-active-filters': hasActiveFilters }"
+                >
+                  <TreeSelect
+                    v-model="selectedFilters"
+                    :options="FILTER_TREE"
+                    selectionMode="checkbox"
+                    placeholder="Выберите фильтры"
+                    class="filter-tree-select"
+                    display="comma"
+                    style="width: 100%;"
+                  />
+                  <span 
+                    v-if="hasActiveFilters" 
+                    class="filter-count-text"
+                  >
+                    Выбрано {{ activeFiltersCount }} {{ getFilterWord(activeFiltersCount) }}
+                  </span>
+                </div>
                 <button 
                   v-if="hasActiveFilters" 
                   class="clear-filters-icon"
                   type="button"
                   @click="clearFilters"
-                  title="Clear filters"
+                  title="Очистить фильтры"
                 >
                   <i class="pi pi-times-circle"></i>
                 </button>
@@ -694,11 +723,34 @@ html, body {
   max-width: 100%;
 }
 
-.filter-tree-select {
+.filter-tree-select-wrapper {
+  position: relative;
+  display: flex;
   flex: 1;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+}
+
+.filter-tree-select {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.filter-count-text {
+  position: absolute;
+  left: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #475569;
+  font-weight: 500;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  z-index: 1;
+  padding: 0.25rem 0;
 }
 
 .filter-tree-select :deep(.p-treeselect) {
@@ -707,7 +759,9 @@ html, body {
   background: transparent;
   box-shadow: none;
   padding: 0;
-  width: 100%;
+  width: 100% !important;
+  min-width: 100%;
+  display: block;
   max-width: 100%;
   overflow: hidden;
 }
@@ -729,6 +783,12 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+
+/* Скрываем стандартное отображение label когда показываем кастомный текст */
+.filter-tree-select-wrapper.has-active-filters .filter-tree-select :deep(.p-treeselect-label) {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .filter-tree-select :deep(.p-treeselect-trigger) {

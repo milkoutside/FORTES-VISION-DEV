@@ -229,11 +229,11 @@ const handlePageChange = (event) => {
 </script>
 
 <template>
-  <section class="user-manager container-fluid px-0 py-3">
-    <div class="card shadow-sm border-0 rounded-4">
-      <div class="card-body d-flex flex-column">
+  <section class="user-manager container-fluid px-0 py-3 h-100">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-body d-flex flex-column h-100">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
-          <div>
+          <div class="section-title">
             <h5 class="mb-1">User list</h5>
             <small class="text-muted">Total: {{ pagination.total }}</small>
           </div>
@@ -270,8 +270,8 @@ const handlePageChange = (event) => {
           :loading="isLoading"
           dataKey="id"
           scrollable
-          scrollHeight="420px"
-          class="flex-grow-1"
+          scrollHeight="flex"
+          class="flex-grow-1 h-100"
         >
           <Column field="name" header="Name">
             <template #body="{ data }">
@@ -433,6 +433,11 @@ const handlePageChange = (event) => {
   min-height: 36px;
 }
 
+.control-toolbar {
+  flex-wrap: nowrap;
+  flex: 1 1 0;
+}
+
 .search-box {
   max-width: 320px;
   border-radius: 999px;
@@ -444,6 +449,8 @@ const handlePageChange = (event) => {
 .search-box :deep(.p-inputtext) {
   padding: 0;
   min-height: 32px;
+  border: 0;
+  box-shadow: none;
 }
 
 .inline-input :deep(.p-inputtext),
@@ -466,6 +473,32 @@ const handlePageChange = (event) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.user-manager {
+  height: 100%;
+}
+
+.user-manager .card,
+.user-manager .card-body {
+  height: 100%;
+}
+
+.section-title {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.user-manager .card-body {
+  min-height: 0;
+}
+
+.user-manager :deep(.p-datatable) {
+  height: 100%;
+}
+
+.user-manager :deep(.p-datatable-wrapper) {
+  height: 100%;
 }
 </style>
 

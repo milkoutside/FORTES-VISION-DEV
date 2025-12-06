@@ -38,10 +38,22 @@ export const deleteUser = async (id) => {
   return true;
 };
 
+export const fetchProjectManagers = async (search = '') => {
+  console.log('[usersRepository] Запрос на /users/project-managers с поиском:', search);
+  const params = {};
+  if (search) {
+    params.search = search;
+  }
+  const response = await httpClient.get(`${resource}/project-managers`, { params });
+  console.log('[usersRepository] Ответ от API:', response?.data);
+  return response?.data?.data ?? [];
+};
+
 export default {
   fetchUsers,
   createUser,
   updateUser,
   deleteUser,
+  fetchProjectManagers,
 };
 

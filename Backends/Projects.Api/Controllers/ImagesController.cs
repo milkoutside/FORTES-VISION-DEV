@@ -181,45 +181,95 @@ public class ImagesController : ControllerBase
         if (durations.Count == 0) return new List<TaskEntity>();
 
         var cursor = DateOnly.FromDateTime(DateTime.UtcNow);
-        var tasks = new List<TaskEntity>(durations.Count);
+        var tasks = new List<TaskEntity>();
 
         foreach (var item in durations)
         {
-            var (start, end, nextSeed) = AllocateBusinessRange(cursor, item.Duration);
-            tasks.Add(new TaskEntity
+            // Создаем задачи только на рабочие дни, пропуская выходные
+            var businessDays = GetBusinessDays(cursor, item.Duration);
+            
+            // Группируем смежные рабочие дни в сегменты (разделяя выходными)
+            var segments = GroupBusinessDaysIntoSegments(businessDays);
+            
+            foreach (var segment in segments)
             {
-                ProjectId = projectId,
-                BatchId = batchId,
-                ImageId = imageId,
-                StatusId = item.Status,
-                StartDate = start,
-                DueDate = end,
-                EndDate = end,
-                Completed = false
-            });
-            cursor = nextSeed;
+                tasks.Add(new TaskEntity
+                {
+                    ProjectId = projectId,
+                    BatchId = batchId,
+                    ImageId = imageId,
+                    StatusId = item.Status,
+                    StartDate = segment.Start,
+                    DueDate = segment.End,
+                    EndDate = segment.End,
+                    Completed = false
+                });
+            }
+            
+            // Следующий статус начинается со следующего рабочего дня после последнего
+            if (businessDays.Count > 0)
+            {
+                cursor = MoveToNextBusinessDay(businessDays.Last().AddDays(1));
+            }
         }
 
         return tasks;
     }
 
-    private static (DateOnly Start, DateOnly End, DateOnly NextSeed) AllocateBusinessRange(DateOnly seed, int duration)
+    private static List<DateOnly> GetBusinessDays(DateOnly seed, int duration)
     {
         if (duration <= 0) throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be greater than zero.");
 
-        var start = MoveToNextBusinessDay(seed);
-        var current = start;
-        var remaining = duration - 1;
-
-        while (remaining > 0)
+        var businessDays = new List<DateOnly>();
+        var current = IsWeekend(seed) ? MoveToNextBusinessDay(seed) : seed;
+        
+        for (int i = 0; i < duration; i++)
         {
-            current = MoveToNextBusinessDay(current.AddDays(1));
-            remaining--;
+            businessDays.Add(current);
+            // Переходим к следующему рабочему дню
+            current = current.AddDays(1);
+            if (IsWeekend(current))
+            {
+                current = MoveToNextBusinessDay(current);
+            }
         }
 
-        var end = current;
-        var nextSeed = MoveToNextBusinessDay(end.AddDays(1));
-        return (start, end, nextSeed);
+        return businessDays;
+    }
+
+    private static List<(DateOnly Start, DateOnly End)> GroupBusinessDaysIntoSegments(List<DateOnly> businessDays)
+    {
+        if (businessDays.Count == 0) return new List<(DateOnly, DateOnly)>();
+
+        var segments = new List<(DateOnly Start, DateOnly End)>();
+        var segmentStart = businessDays[0];
+        var segmentEnd = businessDays[0];
+
+        for (int i = 1; i < businessDays.Count; i++)
+        {
+            var current = businessDays[i];
+            var previous = businessDays[i - 1];
+            
+            // Если текущий день не следующий день после предыдущего (есть разрыв из-за выходных)
+            if (current != previous.AddDays(1))
+            {
+                // Завершаем текущий сегмент
+                segments.Add((segmentStart, segmentEnd));
+                // Начинаем новый сегмент
+                segmentStart = current;
+                segmentEnd = current;
+            }
+            else
+            {
+                // Продолжаем текущий сегмент
+                segmentEnd = current;
+            }
+        }
+
+        // Добавляем последний сегмент
+        segments.Add((segmentStart, segmentEnd));
+
+        return segments;
     }
 
     private static bool IsWeekend(DateOnly date)

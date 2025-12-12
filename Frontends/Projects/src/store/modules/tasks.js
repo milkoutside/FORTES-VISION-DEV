@@ -171,9 +171,10 @@ const buildSegments = (cells) => {
   // ВАЖНО: НЕ фильтруем выходные - пользователь может их явно выделить и закрасить!
   // Группируем смежные ячейки:
   // 1. Последовательные дни (включая выходные) = один сегмент
-  // 2. Рабочие дни через выходные (Пт -> Пн) = один сегмент
+  // 2. Рабочие дни через выходные (Пт -> Пн) = один сегмент ТОЛЬКО если выходные были явно выделены
   // 3. Разрыв больше чем выходные = новый сегмент
   const sorted = [...cells].sort((a, b) => compareDates(a.date, b.date));
+  const selectedDates = new Set(sorted.map(cell => cell.date));
   const segments = [];
   let current = null;
   
@@ -194,11 +195,25 @@ const buildSegments = (cells) => {
     }
     
     // Если не следующий день - проверяем, может это следующий рабочий день через выходные?
+    // НО только если все выходные между ними были явно выделены!
     const nextBusinessDayDate = nextBusinessDay(prevDate);
     if (cell.date === nextBusinessDayDate) {
-      // Это следующий рабочий день после выходных - продолжаем сегмент
-      current.endDate = cell.date;
-      return;
+      // Проверяем, были ли все выходные между prevDate и cell.date явно выделены
+      let allWeekendsSelected = true;
+      let checkDate = nextDay;
+      while (compareDates(checkDate, cell.date) < 0) {
+        if (isWeekend(checkDate) && !selectedDates.has(checkDate)) {
+          allWeekendsSelected = false;
+          break;
+        }
+        checkDate = addDays(checkDate, 1);
+      }
+      
+      // Объединяем только если все выходные были выделены
+      if (allWeekendsSelected) {
+        current.endDate = cell.date;
+        return;
+      }
     }
     
     // Иначе - начинаем новый сегмент
@@ -309,11 +324,9 @@ const buildPayloadForStatus = (statusId, range, users = [], completed = false) =
     statusId,
     startDate: range.startDate,
     completed,
+    endDate: range.endDate,
+    dueDate: range.endDate,
   };
-  if (compareDates(range.startDate, range.endDate) !== 0) {
-    payload.endDate = range.endDate;
-    payload.dueDate = range.endDate;
-  }
   if (users.length) {
     payload.users = toUserPayload(users);
   }
@@ -421,6 +434,9 @@ const actions = {
       // Отслеживаем уже удаленные задачи во всех сегментах этого image
       const globalDeletedIds = new Set();
       
+      // Создаем Set выделенных дат для проверки
+      const selectedDates = new Set(group.cells.map(cell => cell.date));
+      
       const segments = buildSegments(group.cells);
       for (const segment of segments) {
         const deleteIds = new Set();
@@ -445,15 +461,15 @@ const actions = {
           });
         });
 
+        // Объединяем с соседними задачами того же статуса, если они смежные (без невыделенных выходных)
         let finalStart = segment.startDate;
         let finalEnd = segment.endDate;
         let mergedUsers = mergeUserLists(
           overlapping.flatMap((task) => task.users ?? []),
         );
+        let mergedCompleted = false;
 
-        // Проверяем соседа слева
-        // 1. Сначала проверяем предыдущий день (может быть выходной)
-        // 2. Если это выходной без задачи, проверяем предыдущий рабочий день
+        // Проверяем соседа слева - смежная задача того же статуса
         const prevDay = addDays(segment.startDate, -1);
         let leftNeighbor = getTaskAtDate(entry, prevDay);
         
@@ -461,25 +477,60 @@ const actions = {
         if (!leftNeighbor && isWeekend(prevDay)) {
           const leftBusinessDay = previousBusinessDay(segment.startDate);
           leftNeighbor = getTaskAtDate(entry, leftBusinessDay);
+          
+          // Проверяем, есть ли невыделенные выходные между ними
+          if (leftNeighbor) {
+            let hasUnselectedWeekends = false;
+            let checkDate = addDays(leftBusinessDay, 1);
+            while (compareDates(checkDate, segment.startDate) < 0) {
+              if (isWeekend(checkDate) && !selectedDates.has(checkDate)) {
+                hasUnselectedWeekends = true;
+                break;
+              }
+              checkDate = addDays(checkDate, 1);
+            }
+            if (hasUnselectedWeekends) {
+              leftNeighbor = null;
+            }
+          }
+        } else if (leftNeighbor && isWeekend(prevDay)) {
+          // Если предыдущий день - выходной с задачей, но он не был выделен - не объединяем
+          if (!selectedDates.has(prevDay)) {
+            leftNeighbor = null;
+          }
         }
         
+        // Объединяем с левым соседом, если статус совпадает и нет невыделенных выходных
         if (
           leftNeighbor &&
           leftNeighbor.status.id === statusId &&
           !deleteIds.has(leftNeighbor.id) &&
           !globalDeletedIds.has(leftNeighbor.id)
         ) {
-          deleteIds.add(leftNeighbor.id);
-          globalDeletedIds.add(leftNeighbor.id);
           const range = getTaskRange(leftNeighbor);
-          finalStart = compareDates(range.start, finalStart) < 0 ? range.start : finalStart;
-          mergedUsers = mergeUserLists(mergedUsers, leftNeighbor.users);
-          updated += 1;
+          let hasUnselectedWeekends = false;
+          let checkDate = addDays(range.end, 1);
+          while (compareDates(checkDate, segment.startDate) < 0) {
+            if (isWeekend(checkDate) && !selectedDates.has(checkDate)) {
+              hasUnselectedWeekends = true;
+              break;
+            }
+            checkDate = addDays(checkDate, 1);
+          }
+          
+          if (!hasUnselectedWeekends) {
+            deleteIds.add(leftNeighbor.id);
+            globalDeletedIds.add(leftNeighbor.id);
+            finalStart = compareDates(range.start, finalStart) < 0 ? range.start : finalStart;
+            mergedUsers = mergeUserLists(mergedUsers, leftNeighbor.users);
+            if (leftNeighbor.completed) {
+              mergedCompleted = true;
+            }
+            updated += 1;
+          }
         }
 
-        // Проверяем соседа справа
-        // 1. Сначала проверяем следующий день (может быть выходной)
-        // 2. Если это выходной без задачи, проверяем следующий рабочий день
+        // Проверяем соседа справа - смежная задача того же статуса
         const nextDay = addDays(segment.endDate, 1);
         let rightNeighbor = getTaskAtDate(entry, nextDay);
         
@@ -487,38 +538,99 @@ const actions = {
         if (!rightNeighbor && isWeekend(nextDay)) {
           const rightBusinessDay = nextBusinessDay(segment.endDate);
           rightNeighbor = getTaskAtDate(entry, rightBusinessDay);
+          
+          // Проверяем, есть ли невыделенные выходные между ними
+          if (rightNeighbor) {
+            let hasUnselectedWeekends = false;
+            let checkDate = addDays(segment.endDate, 1);
+            while (compareDates(checkDate, rightBusinessDay) < 0) {
+              if (isWeekend(checkDate) && !selectedDates.has(checkDate)) {
+                hasUnselectedWeekends = true;
+                break;
+              }
+              checkDate = addDays(checkDate, 1);
+            }
+            if (hasUnselectedWeekends) {
+              rightNeighbor = null;
+            }
+          }
+        } else if (rightNeighbor && isWeekend(nextDay)) {
+          // Если следующий день - выходной с задачей, но он не был выделен - не объединяем
+          if (!selectedDates.has(nextDay)) {
+            rightNeighbor = null;
+          }
         }
         
+        // Объединяем с правым соседом, если статус совпадает и нет невыделенных выходных
         if (
           rightNeighbor &&
           rightNeighbor.status.id === statusId &&
           !deleteIds.has(rightNeighbor.id) &&
           !globalDeletedIds.has(rightNeighbor.id)
         ) {
-          deleteIds.add(rightNeighbor.id);
-          globalDeletedIds.add(rightNeighbor.id);
           const range = getTaskRange(rightNeighbor);
-          finalEnd = compareDates(range.end, finalEnd) > 0 ? range.end : finalEnd;
-          mergedUsers = mergeUserLists(mergedUsers, rightNeighbor.users);
-          updated += 1;
+          let hasUnselectedWeekends = false;
+          let checkDate = addDays(segment.endDate, 1);
+          while (compareDates(checkDate, range.start) < 0) {
+            if (isWeekend(checkDate) && !selectedDates.has(checkDate)) {
+              hasUnselectedWeekends = true;
+              break;
+            }
+            checkDate = addDays(checkDate, 1);
+          }
+          
+          if (!hasUnselectedWeekends) {
+            deleteIds.add(rightNeighbor.id);
+            globalDeletedIds.add(rightNeighbor.id);
+            finalEnd = compareDates(range.end, finalEnd) > 0 ? range.end : finalEnd;
+            mergedUsers = mergeUserLists(mergedUsers, rightNeighbor.users);
+            if (rightNeighbor.completed) {
+              mergedCompleted = true;
+            }
+            updated += 1;
+          }
         }
 
         overlapping.forEach(() => {
           updated += 1;
         });
 
-        const referenceTask = leftNeighbor ?? rightNeighbor ?? overlapping[0];
-        const mergedCompleted = referenceTask ? referenceTask.completed : false;
+        // Используем completed из перекрывающихся задач, если не нашли в соседних
+        if (!mergedCompleted && overlapping.length > 0) {
+          mergedCompleted = overlapping[0].completed || false;
+        }
 
-        creates.push(
-          buildPayloadForStatus(
-            statusId,
-            { startDate: finalStart, endDate: finalEnd },
-            mergedUsers,
-            mergedCompleted,
-          ),
-        );
-        created += 1;
+        // Используем finalStart и finalEnd для создания объединенной задачи
+        // Если были объединены соседние задачи, используем расширенный диапазон
+        // Иначе используем только выделенные даты из сегмента
+        const segmentSelectedDates = group.cells
+          .filter(cell => 
+            compareDates(cell.date, segment.startDate) >= 0 && 
+            compareDates(cell.date, segment.endDate) <= 0
+          )
+          .map(cell => cell.date)
+          .sort(compareDates);
+        
+        if (segmentSelectedDates.length > 0) {
+          // Если были объединены соседние задачи, используем расширенный диапазон
+          // Иначе используем только выделенные даты
+          const taskStartDate = (finalStart !== segment.startDate || finalEnd !== segment.endDate) 
+            ? finalStart 
+            : segmentSelectedDates[0];
+          const taskEndDate = (finalStart !== segment.startDate || finalEnd !== segment.endDate)
+            ? finalEnd
+            : segmentSelectedDates[segmentSelectedDates.length - 1];
+          
+          creates.push(
+            buildPayloadForStatus(
+              statusId,
+              { startDate: taskStartDate, endDate: taskEndDate },
+              mergedUsers,
+              mergedCompleted,
+            ),
+          );
+          created += 1;
+        }
 
         // Отправляем операции только если есть что обрабатывать
         if (deleteIds.size > 0 || creates.length > 0) {

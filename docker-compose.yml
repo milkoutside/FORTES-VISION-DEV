@@ -117,5 +117,3 @@ volumes:
     driver: local
   projects_frontend_node_modules:
   employees_frontend_node_modules:
-
-

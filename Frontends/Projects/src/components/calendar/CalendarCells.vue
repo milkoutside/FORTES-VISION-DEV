@@ -437,17 +437,17 @@ const resolveCellClasses = (imageData, date) => {
   return {
     weekend: isWeekendDay,
     selected: selectedCells.value.has(getSelectionKeyFromData(imageData, date)),
-    'has-task': !!task && !isWeekendDay,
-    completed: !!task?.completed && !isWeekendDay,
-    'weekend-auto': weekendStatus.value && isWeekendDay,
+    'has-task': !!task,
+    completed: !!task?.completed,
+    'weekend-auto': weekendStatus.value && isWeekendDay && !task,
   };
 };
 
 const resolveCellStyle = (imageData, date) => {
   const task = getTaskForImageDate(imageData, date);
   
-  // Выходные всегда имеют приоритет
-  if (weekendStatus.value && isWeekend(date)) {
+  // Выходной стиль применяется только если нет задачи
+  if (weekendStatus.value && isWeekend(date) && !task) {
     return {
       '--weekend-auto-color': weekendStatus.value.color,
       '--weekend-auto-text-color': weekendStatus.value.textColor,
@@ -524,6 +524,10 @@ const getConnectedCellsForTask = (cell) => {
   const task = getTaskForCell(cell);
   if (!task) return [cell];
   
+  // Используем статус для поиска связанных задач (не только ID)
+  const taskStatusId = task.status?.id;
+  if (!taskStatusId) return [cell];
+  
   const visited = new Set();
   const queue = [cell];
   
@@ -544,7 +548,6 @@ const getConnectedCellsForTask = (cell) => {
     // Проверяем влево и вправо
     for (let offset = -1; offset <= 1; offset += 2) {
       let checkIndex = currentDateIndex + offset;
-      let foundWeekend = false;
       
       // Ищем следующую рабочую ячейку, пропуская выходные
       while (checkIndex >= 0 && checkIndex < allDates.value.length) {
@@ -552,7 +555,6 @@ const getConnectedCellsForTask = (cell) => {
         
         // Если это выходной - продолжаем поиск
         if (isWeekend(checkDate)) {
-          foundWeekend = true;
           checkIndex += offset;
           continue;
         }
@@ -560,8 +562,9 @@ const getConnectedCellsForTask = (cell) => {
         // Нашли рабочий день - проверяем задачу
         const checkTask = getTaskForImageDate(imageData, checkDate);
         
-        if (checkTask && checkTask.id === task.id) {
-          // Та же задача - добавляем в очередь
+        // Проверяем по статусу (а не только по ID), чтобы находить связанные задачи через выходные
+        if (checkTask && checkTask.status?.id === taskStatusId) {
+          // Та же задача или задача с тем же статусом - добавляем в очередь
           const cellInfo = buildCellInfo(imageData, checkDate, current.rowIndex);
           const cellKey = buildCellKey(cellInfo);
           if (!visited.has(cellKey)) {
@@ -1152,7 +1155,7 @@ defineExpose({
                   {{ getUsersCount(item.data, date) }}
                 </div>
                 <i
-                  v-if="!isWeekend(date) && getTaskForImageDate(item.data, date)?.completed"
+                  v-if="getTaskForImageDate(item.data, date)?.completed"
                   class="pi pi-check cell-complete-icon"
                   title="Task completed"
                   style="align-self: flex-start;"

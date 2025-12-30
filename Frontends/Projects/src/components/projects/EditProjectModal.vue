@@ -172,7 +172,7 @@ const isSubmitDisabled = computed(() => !form.name.trim() || isSubmitting.value)
 const buildPayload = () => ({
   name: form.name.trim(),
   isActive: form.isActive,
-  clientName: form.clientName.trim() || null,
+  clientName: null, // form.clientName.trim() || null,
   startDate: formatDate(form.startDate),
   endDate: formatDate(form.endDate),
   deadlineType: form.deadlineType,
@@ -298,7 +298,7 @@ const handleSubmit = async () => {
       </div>
 
       <div class="row g-3">
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
           <label class="form-label fw-semibold">Client</label>
           <InputText
             v-model="form.clientName"
@@ -306,7 +306,7 @@ const handleSubmit = async () => {
             placeholder="Client name"
             autocomplete="off"
           />
-        </div>
+        </div> -->
         <div class="col-md-6">
           <label class="form-label fw-semibold">Deadline type</label>
           <Select

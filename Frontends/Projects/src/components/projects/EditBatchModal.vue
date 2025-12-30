@@ -31,6 +31,7 @@ const toast = useToast();
 
 const form = reactive({
   name: '',
+  batchDate: new Date(),
   statusDurations: [],
 });
 
@@ -40,9 +41,29 @@ const draggedIndex = ref(null);
 const batchCalculatorId = ref(null);
 
 const statuses = computed(() => store.state.statuses.items);
+const hasValidBatchDate = computed(() => form.batchDate instanceof Date && !Number.isNaN(form.batchDate?.getTime?.()));
+
+const formatDateForApi = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const toDateInstance = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 const resetForm = () => {
   form.name = '';
+  form.batchDate = new Date();
   form.statusDurations = [];
   batchCalculatorId.value = null;
 };
@@ -54,6 +75,7 @@ const loadBatchData = async () => {
   }
 
   form.name = props.batch.name || '';
+  form.batchDate = toDateInstance(props.batch.batchDate) ?? new Date();
   isLoading.value = true;
   
   try {
@@ -80,12 +102,8 @@ const loadBatchData = async () => {
       batchCalculatorId.value = null;
     }
   } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Failed to load',
-      detail: error.message ?? 'Could not load batch data.',
-      life: 5000,
-    });
+    // Ошибки загрузки калькулятора не должны пугать пользователя
+    console.error('Failed to load batch data', error);
     form.statusDurations = [];
     batchCalculatorId.value = null;
   } finally {
@@ -132,7 +150,7 @@ const handleDragEnd = () => {
 
 const isFormValid = computed(() => {
   const hasName = !!form.name.trim();
-  if (!hasName) {
+  if (!hasName || !hasValidBatchDate.value) {
     return false;
   }
 
@@ -207,11 +225,22 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (!hasValidBatchDate.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Batch date is required',
+      detail: 'Select a valid batch date.',
+      life: 4000,
+    });
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     // Обновляем батч
     await updateBatch(props.batch.id, {
       name: form.name.trim(),
+      batchDate: formatDateForApi(form.batchDate),
     });
 
     // Обновляем или создаем калькулятор
@@ -285,6 +314,18 @@ const handleSubmit = async () => {
           class="w-100"
           placeholder="Enter batch name"
           autocomplete="off"
+        />
+      </div>
+
+      <div>
+        <label class="form-label fw-semibold">Batch date</label>
+        <DatePicker
+          v-model="form.batchDate"
+          dateFormat="yy-mm-dd"
+          showIcon
+          iconDisplay="input"
+          placeholder="Select a date"
+          :class="['w-100', { 'p-invalid': !hasValidBatchDate }]"
         />
       </div>
 

@@ -174,13 +174,24 @@ public class ImagesController : ControllerBase
             return new List<TaskEntity>();
         }
 
+        var batch = await _db.Batches
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == batchId && x.ProjectId == projectId, ct);
+
+        if (batch == null)
+        {
+            return new List<TaskEntity>();
+        }
+
         var durations = calculator.StatusDurations
             .Where(sd => sd.Status > 0 && sd.Duration > 0)
             .ToList();
 
         if (durations.Count == 0) return new List<TaskEntity>();
 
-        var cursor = DateOnly.FromDateTime(DateTime.UtcNow);
+        var cursor = batch.BatchDate == default
+            ? DateOnly.FromDateTime(DateTime.UtcNow)
+            : batch.BatchDate;
         var tasks = new List<TaskEntity>();
 
         foreach (var item in durations)

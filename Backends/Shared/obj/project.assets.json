@@ -2274,11 +2274,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\visual test\\Fortes-Vision\\Backends\\Shared\\Shared.csproj",
+      "projectUniqueName": "D:\\FORTES-VISION-DEV\\Backends\\Shared\\Shared.csproj",
       "projectName": "Shared",
-      "projectPath": "D:\\visual test\\Fortes-Vision\\Backends\\Shared\\Shared.csproj",
+      "projectPath": "D:\\FORTES-VISION-DEV\\Backends\\Shared\\Shared.csproj",
       "packagesPath": "C:\\Users\\saha\\.nuget\\packages\\",
-      "outputPath": "D:\\visual test\\Fortes-Vision\\Backends\\Shared\\obj\\",
+      "outputPath": "D:\\FORTES-VISION-DEV\\Backends\\Shared\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -2353,7 +2353,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

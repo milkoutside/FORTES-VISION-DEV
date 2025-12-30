@@ -521,9 +521,9 @@ defineExpose({
             <div class="d-flex align-items-center justify-content-between">
               <div class="flex-grow-1" style="min-width: 0; padding-left: 12px;">
                 <div class="fw-semibold text-truncate" :class="{ 'text-danger': !project.isActive }">{{ project.name }}</div>
-                <div v-if="project.clientName" class="text-muted small text-truncate">
+                <!-- <div v-if="project.clientName" class="text-muted small text-truncate">
                   Client: {{ project.clientName }}
-                </div>
+                </div> -->
               </div>
               <div class="d-flex align-items-center" style="flex-shrink: 0; padding-right: 12px;">
                 <i 

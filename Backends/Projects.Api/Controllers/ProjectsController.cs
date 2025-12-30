@@ -156,7 +156,7 @@ public class ProjectsController : ControllerBase
                     var iusDto = ius.Select(u => ToUserDto(users, u.UserId));
                     return new ImageDto(i.Id, i.Name, iusDto);
                 });
-                return new BatchDto(b.Id, b.Name, imgsDto, buDto);
+                return new BatchDto(b.Id, b.Name, b.BatchDate, imgsDto, buDto);
             });
 
             return new ProjectDto(
@@ -356,7 +356,7 @@ public class ProjectsController : ControllerBase
                 var usDto = ius.Select(u => ToUserDto(users, u.UserId));
                 return new ImageDto(i.Id, i.Name, usDto);
             });
-            return new BatchDto(b.Id, b.Name, imgsDto, batchParticipants);
+            return new BatchDto(b.Id, b.Name, b.BatchDate, imgsDto, batchParticipants);
         });
 
         return Ok(ApiResponse.Success(data, "Batches retrieved successfully."));
@@ -376,10 +376,11 @@ public class ProjectsController : ControllerBase
             return NotFound(ApiResponse.Failure<object>("Project not found."));
         }
 
-        var batch = new Shared.Domain.Batches.Batch { Name = req.Name.Trim(), ProjectId = id };
+        var batchDate = req.BatchDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var batch = new Shared.Domain.Batches.Batch { Name = req.Name.Trim(), ProjectId = id, BatchDate = batchDate };
         await _db.Batches.AddAsync(batch, ct);
         await _db.SaveChangesAsync(ct);
-        return StatusCode(StatusCodes.Status201Created, ApiResponse.Success<object>(new { batch.Id, batch.Name }, "Batch created successfully."));
+        return StatusCode(StatusCodes.Status201Created, ApiResponse.Success<object>(new { batch.Id, batch.Name, batch.BatchDate }, "Batch created successfully."));
     }
 
     [HttpDelete("{projectId:long}/batches/{batchId:long}")]
@@ -438,7 +439,7 @@ public class ProjectsController : ControllerBase
                 var iusDto = ius.Select(u => ToUserDto(users, u.UserId));
                 return new ImageDto(i.Id, i.Name, iusDto);
             });
-            return new BatchDto(b.Id, b.Name, imgsDto, batchParticipants);
+            return new BatchDto(b.Id, b.Name, b.BatchDate, imgsDto, batchParticipants);
         });
 
         var pUsersDto = projectUsers.Select(u => ToUserDto(users, u.UserId));

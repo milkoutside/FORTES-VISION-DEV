@@ -2,7 +2,7 @@ namespace Projects.Api.Contracts.Projects;
 
 public record UserDto(long Id, string Name, string Role);
 public record ImageDto(long Id, string Name, IEnumerable<UserDto> Users);
-public record BatchDto(long Id, string Name, IEnumerable<ImageDto> Images, IEnumerable<UserDto> Users);
+public record BatchDto(long Id, string Name, DateOnly? BatchDate, IEnumerable<ImageDto> Images, IEnumerable<UserDto> Users);
 public record ProjectDto(
     long Id,
     string Name,

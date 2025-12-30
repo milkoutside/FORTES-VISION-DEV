@@ -21,6 +21,11 @@ public class BatchConfiguration : IEntityTypeConfiguration<Batch>
         builder.Property(x => x.ProjectId)
             .HasColumnName("project_id");
 
+        builder.Property(x => x.BatchDate)
+            .HasColumnName("batch_date")
+            .HasColumnType("date")
+            .HasDefaultValueSql("CURRENT_DATE");
+
         builder.HasOne(x => x.Project)
             .WithMany(p => p.Batches)
             .HasForeignKey(x => x.ProjectId)

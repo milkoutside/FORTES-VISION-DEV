@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System;
 using Shared.Database;
 using Shared.Domain.Images;
 using Shared.Domain.Projects;
@@ -18,6 +19,9 @@ public class Batch : BaseEntity
     public Project Project { get; set; } = null!;
 
     public ICollection<Image> Images { get; set; } = new List<Image>();
+
+    [Column("batch_date", TypeName = "date")]
+    public DateOnly BatchDate { get; set; }
 }
 
 

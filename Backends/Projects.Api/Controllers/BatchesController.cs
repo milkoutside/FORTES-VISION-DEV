@@ -47,7 +47,7 @@ public class BatchesController : ControllerBase
             var batchParticipants = batchUsersByBatch.TryGetValue(b.Id, out var buList)
                 ? buList.Select(u => ToUserDto(users, u.UserId))
                 : Enumerable.Empty<UserDto>();
-            return new BatchDto(b.Id, b.Name, imgsDto, batchParticipants);
+            return new BatchDto(b.Id, b.Name, b.BatchDate, imgsDto, batchParticipants);
         });
         return Ok(ApiResponse.Success(data, "Batches retrieved successfully."));
     }
@@ -58,10 +58,11 @@ public class BatchesController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.Name)) return BadRequest(ApiResponse.Failure<object>("Batch name is required."));
         var existsProject = await _db.Projects.AnyAsync(p => p.Id == req.ProjectId, ct);
         if (!existsProject) return BadRequest(ApiResponse.Failure<object>("Project does not exist."));
-        var b = new Batch { Name = req.Name.Trim(), ProjectId = req.ProjectId };
+        var batchDate = req.BatchDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var b = new Batch { Name = req.Name.Trim(), ProjectId = req.ProjectId, BatchDate = batchDate };
         await _db.Batches.AddAsync(b, ct);
         await _db.SaveChangesAsync(ct);
-        return StatusCode(201, ApiResponse.Success<object>(new { b.Id, b.Name }, "Batch created successfully."));
+        return StatusCode(201, ApiResponse.Success<object>(new { b.Id, b.Name, b.BatchDate }, "Batch created successfully."));
     }
 
     [HttpGet("{id:long}")]
@@ -69,7 +70,7 @@ public class BatchesController : ControllerBase
     {
         var b = await _db.Batches.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
         if (b == null) return NotFound(ApiResponse.Failure<object>("Batch not found."));
-        return Ok(ApiResponse.Success<object>(new { b.Id, b.Name, b.ProjectId }, "Batch retrieved successfully."));
+        return Ok(ApiResponse.Success<object>(new { b.Id, b.Name, b.ProjectId, b.BatchDate }, "Batch retrieved successfully."));
     }
 
     [HttpPut("{id:long}")]
@@ -88,8 +89,12 @@ public class BatchesController : ControllerBase
             if (!existsProject) return BadRequest(ApiResponse.Failure<object>("Project does not exist."));
             batch.ProjectId = req.ProjectId.Value;
         }
+        if (req.BatchDate.HasValue)
+        {
+            batch.BatchDate = req.BatchDate.Value;
+        }
         await _db.SaveChangesAsync(ct);
-        return Ok(ApiResponse.Success<object>(new { batch.Id, batch.Name, batch.ProjectId }, "Batch updated successfully."));
+        return Ok(ApiResponse.Success<object>(new { batch.Id, batch.Name, batch.ProjectId, batch.BatchDate }, "Batch updated successfully."));
     }
 
     [HttpDelete("{id:long}")]
@@ -106,7 +111,7 @@ public class BatchesController : ControllerBase
     public async Task<ActionResult<ApiResponse<IEnumerable<object>>>> ByProject(long projectId, CancellationToken ct)
     {
         var batches = await _db.Batches.AsNoTracking().Where(b => b.ProjectId == projectId).ToListAsync(ct);
-        var data = batches.Select(b => new { b.Id, b.Name, b.ProjectId });
+        var data = batches.Select(b => new { b.Id, b.Name, b.ProjectId, b.BatchDate });
         return Ok(ApiResponse.Success<IEnumerable<object>>(data, "Batches retrieved successfully."));
     }
 

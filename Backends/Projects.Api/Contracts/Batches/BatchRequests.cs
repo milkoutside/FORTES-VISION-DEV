@@ -4,12 +4,14 @@ public class CreateBatchRequest
 {
     public string Name { get; set; } = null!;
     public long ProjectId { get; set; }
+    public DateOnly? BatchDate { get; set; }
 }
 
 public class UpdateBatchRequest
 {
     public string? Name { get; set; }
     public long? ProjectId { get; set; }
+    public DateOnly? BatchDate { get; set; }
 }
 
 

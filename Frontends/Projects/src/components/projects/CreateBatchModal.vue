@@ -27,6 +27,7 @@ const toast = useToast();
 
 const form = reactive({
   name: '',
+  batchDate: new Date(),
   statusDurations: [],
 });
 
@@ -34,9 +35,24 @@ const isSubmitting = ref(false);
 const draggedIndex = ref(null);
 
 const statuses = computed(() => store.state.statuses.items);
+const hasValidBatchDate = computed(() => form.batchDate instanceof Date && !Number.isNaN(form.batchDate?.getTime?.()));
+
+const formatDateForApi = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  // Сдвигаем в локальную дату, чтобы избежать смещения по UTC
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const resetForm = () => {
   form.name = '';
+  form.batchDate = new Date();
   form.statusDurations = [];
 };
 
@@ -84,7 +100,7 @@ const getStatusName = (statusId) => {
 
 const isFormValid = computed(() => {
   const hasName = !!form.name.trim();
-  if (!hasName) {
+  if (!hasName || !hasValidBatchDate.value) {
     return false;
   }
 
@@ -116,6 +132,16 @@ const handleSubmit = async () => {
       severity: 'warn',
       summary: 'Name is required',
       detail: 'Enter a batch name.',
+      life: 4000,
+    });
+    return;
+  }
+
+  if (!hasValidBatchDate.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Batch date is required',
+      detail: 'Select a valid batch date.',
       life: 4000,
     });
     return;
@@ -154,6 +180,7 @@ const handleSubmit = async () => {
     const batch = await createBatch(props.project.id, {
       name: form.name.trim(),
       projectId: props.project.id,
+      batchDate: formatDateForApi(form.batchDate),
     });
 
     if (hasCalculator) {
@@ -208,6 +235,18 @@ const handleSubmit = async () => {
           class="w-100"
           placeholder="Enter batch name"
           autocomplete="off"
+        />
+      </div>
+
+      <div>
+        <label class="form-label fw-semibold">Batch date</label>
+        <DatePicker
+          v-model="form.batchDate"
+          dateFormat="yy-mm-dd"
+          showIcon
+          iconDisplay="input"
+          placeholder="Select a date"
+          :class="['w-100', { 'p-invalid': !hasValidBatchDate }]"
         />
       </div>
 
